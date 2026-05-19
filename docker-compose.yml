@@ -1,0 +1,37 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: futurekawa-postgres
+    environment:
+      POSTGRES_DB: futurekawa
+      POSTGRES_USER: futurekawa
+      POSTGRES_PASSWORD: futurekawa
+    ports:
+      - "5432:5432"
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: futurekawa-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config
+
+  backend-country:
+    build: ./backend-country
+    container_name: backend-country
+    ports:
+      - "8001:8000"
+
+  backend-central:
+    build: ./backend-central
+    container_name: backend-central
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:80"
