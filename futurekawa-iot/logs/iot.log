@@ -1,0 +1,164 @@
+2026-05-27 11:14:22,027 [INFO] ==================================================
+2026-05-27 11:14:22,027 [INFO] FutureKawa IoT - Démarrage (EQUATEUR)
+2026-05-27 11:14:22,032 [INFO] Entrepôt : WH-EQ-01
+2026-05-27 11:14:22,032 [INFO] Seuils : Temp 28.0-34.0°C | Hum 58.0-62.0%
+2026-05-27 11:14:22,033 [INFO] ==================================================
+2026-05-27 11:14:22,033 [INFO] GPIO initialisé (mode BCM)
+2026-05-27 11:14:22,047 [INFO] Connexion au broker MQTT 192.168.1.100:1883...
+2026-05-27 11:14:25,128 [ERROR] Impossible de joindre le broker MQTT : [Errno 113] No route to host
+2026-05-27 11:14:25,128 [INFO] Le module continuera à tenter de se reconnecter...
+2026-05-27 11:14:25,130 [INFO] Démarrage des relevés toutes les 30s
+2026-05-27 11:14:25,381 [WARNING] Erreur lecture DHT11 (tentative 1/3) : DHT sensor not found, check wiring
+2026-05-27 11:14:27,632 [WARNING] Erreur lecture DHT11 (tentative 2/3) : DHT sensor not found, check wiring
+2026-05-27 11:14:29,883 [WARNING] Erreur lecture DHT11 (tentative 3/3) : DHT sensor not found, check wiring
+2026-05-27 11:14:29,884 [ERROR] Impossible de lire le DHT11 après toutes les tentatives
+2026-05-27 11:14:29,884 [ERROR] Mesure ignorée (erreur capteur)
+2026-05-27 11:15:00,135 [WARNING] Erreur lecture DHT11 (tentative 1/3) : DHT sensor not found, check wiring
+2026-05-27 11:15:00,341 [INFO] Arrêt du module IoT FutureKawa...
+2026-05-27 11:15:00,843 [INFO] Nettoyage terminé. À bientôt.
+2026-05-27 11:31:55,809 [INFO] ==================================================
+2026-05-27 11:31:55,810 [INFO] FutureKawa IoT - Démarrage (EQUATEUR)
+2026-05-27 11:31:55,810 [INFO] Entrepôt : WH-EQ-01
+2026-05-27 11:31:55,810 [INFO] Seuils : Temp 28.0-34.0°C | Hum 58.0-62.0%
+2026-05-27 11:31:55,810 [INFO] ==================================================
+2026-05-27 11:31:55,811 [INFO] GPIO initialisé (mode BCM)
+2026-05-27 11:31:55,824 [INFO] Connexion au broker MQTT 192.168.1.100:1883...
+2026-05-27 11:31:58,888 [ERROR] Impossible de joindre le broker MQTT : [Errno 113] No route to host
+2026-05-27 11:31:58,888 [INFO] Le module continuera à tenter de se reconnecter...
+2026-05-27 11:31:58,890 [INFO] Démarrage des relevés toutes les 30s
+2026-05-27 11:31:59,148 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:32:29,406 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:32:59,664 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:33:29,922 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:34:00,179 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:34:30,437 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:35:00,695 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:35:30,953 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:36:01,210 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:36:27,104 [INFO] Arrêt du module IoT FutureKawa...
+2026-05-27 11:36:27,607 [INFO] Nettoyage terminé. À bientôt.
+2026-05-27 11:48:19,875 [INFO] ==================================================
+2026-05-27 11:48:19,876 [INFO] FutureKawa IoT - Démarrage (EQUATEUR)
+2026-05-27 11:48:19,876 [INFO] Entrepôt : WH-EQ-01
+2026-05-27 11:48:19,876 [INFO] Seuils : Temp 28.0-34.0°C | Hum 58.0-62.0%
+2026-05-27 11:48:19,877 [INFO] ==================================================
+2026-05-27 11:48:19,877 [INFO] GPIO initialisé (mode BCM)
+2026-05-27 11:48:19,890 [INFO] Connexion au broker MQTT 192.168.1.17:1883...
+2026-05-27 11:48:24,904 [ERROR] Impossible de joindre le broker MQTT : timed out
+2026-05-27 11:48:24,905 [INFO] Le module continuera à tenter de se reconnecter...
+2026-05-27 11:48:24,913 [INFO] Démarrage des relevés toutes les 30s
+2026-05-27 11:48:25,171 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:48:51,725 [INFO] Arrêt du module IoT FutureKawa...
+2026-05-27 11:48:52,227 [INFO] Nettoyage terminé. À bientôt.
+2026-05-27 11:49:03,774 [INFO] ==================================================
+2026-05-27 11:49:03,775 [INFO] FutureKawa IoT - Démarrage (EQUATEUR)
+2026-05-27 11:49:03,775 [INFO] Entrepôt : WH-EQ-01
+2026-05-27 11:49:03,776 [INFO] Seuils : Temp 28.0-34.0°C | Hum 58.0-62.0%
+2026-05-27 11:49:03,776 [INFO] ==================================================
+2026-05-27 11:49:03,776 [INFO] GPIO initialisé (mode BCM)
+2026-05-27 11:49:03,790 [INFO] Connexion au broker MQTT 192.168.1.17:1883...
+2026-05-27 11:49:08,803 [ERROR] Impossible de joindre le broker MQTT : timed out
+2026-05-27 11:49:08,804 [INFO] Le module continuera à tenter de se reconnecter...
+2026-05-27 11:49:08,807 [INFO] Démarrage des relevés toutes les 30s
+2026-05-27 11:49:09,066 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:49:39,326 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 11:49:41,584 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:50:11,841 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:50:42,099 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:51:12,357 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:51:42,614 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 11:51:44,872 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:52:15,130 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:52:45,388 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:53:15,646 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:53:45,903 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 11:53:48,161 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:54:18,419 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 11:54:20,676 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:54:50,934 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:55:21,192 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 11:55:23,449 [WARNING] MQTT non connecté, mesure non publiée (sera retentée au prochain cycle)
+2026-05-27 11:55:53,707 [WARNING] Erreur lecture DHT11 (tentative 1/3) : A full buffer was not returned. Try again.
+2026-05-27 11:55:55,862 [INFO] Connecté au broker MQTT (192.168.1.17:1883)
+2026-05-27 11:55:55,965 [INFO] Publié → futurekawa/equateur/measures | Temp: 27.8°C | Hum: 49.0% | Status: ALERTE
+2026-05-27 11:55:55,967 [WARNING] Alerte publiée : Température trop basse : 27.8°C (attendu 28.0-34.0°C)
+2026-05-27 11:55:55,968 [WARNING] Alerte publiée : Humidité trop basse : 49.0% (attendu 58.0-62.0%)
+2026-05-27 11:56:13,572 [INFO] Arrêt du module IoT FutureKawa...
+2026-05-27 11:56:14,075 [INFO] Nettoyage terminé. À bientôt.
+2026-05-27 11:56:18,183 [INFO] ==================================================
+2026-05-27 11:56:18,184 [INFO] FutureKawa IoT - Démarrage (EQUATEUR)
+2026-05-27 11:56:18,184 [INFO] Entrepôt : WH-EQ-01
+2026-05-27 11:56:18,184 [INFO] Seuils : Temp 28.0-34.0°C | Hum 58.0-62.0%
+2026-05-27 11:56:18,185 [INFO] ==================================================
+2026-05-27 11:56:18,185 [INFO] GPIO initialisé (mode BCM)
+2026-05-27 11:56:18,199 [INFO] Connexion au broker MQTT 192.168.1.17:1883...
+2026-05-27 11:56:18,209 [INFO] Démarrage des relevés toutes les 30s
+2026-05-27 11:56:18,210 [INFO] Connecté au broker MQTT (192.168.1.17:1883)
+2026-05-27 11:56:18,468 [INFO] Publié → futurekawa/equateur/measures | Temp: 27.8°C | Hum: 49.0% | Status: ALERTE
+2026-05-27 11:56:18,470 [WARNING] Alerte publiée : Température trop basse : 27.8°C (attendu 28.0-34.0°C)
+2026-05-27 11:56:18,471 [WARNING] Alerte publiée : Humidité trop basse : 49.0% (attendu 58.0-62.0%)
+2026-05-27 11:56:48,731 [INFO] Publié → futurekawa/equateur/measures | Temp: 27.8°C | Hum: 49.0% | Status: ALERTE
+2026-05-27 11:56:48,732 [WARNING] Alerte publiée : Température trop basse : 27.8°C (attendu 28.0-34.0°C)
+2026-05-27 11:56:48,734 [WARNING] Alerte publiée : Humidité trop basse : 49.0% (attendu 58.0-62.0%)
+2026-05-27 11:57:17,242 [INFO] Arrêt du module IoT FutureKawa...
+2026-05-27 11:57:17,745 [INFO] Nettoyage terminé. À bientôt.
+2026-05-27 11:57:58,366 [INFO] ==================================================
+2026-05-27 11:57:58,366 [INFO] FutureKawa IoT - Démarrage (EQUATEUR)
+2026-05-27 11:57:58,367 [INFO] Entrepôt : WH-EQ-01
+2026-05-27 11:57:58,367 [INFO] Seuils : Temp 24.8-30.8°C | Hum 44.0-54.0%
+2026-05-27 11:57:58,368 [INFO] ==================================================
+2026-05-27 11:57:58,369 [INFO] GPIO initialisé (mode BCM)
+2026-05-27 11:57:58,382 [INFO] Connexion au broker MQTT 192.168.1.17:1883...
+2026-05-27 11:57:58,392 [INFO] Démarrage des relevés toutes les 30s
+2026-05-27 11:57:58,393 [INFO] Connecté au broker MQTT (192.168.1.17:1883)
+2026-05-27 11:57:58,651 [INFO] Publié → futurekawa/equateur/measures | Temp: 27.8°C | Hum: 49.0% | Status: OK
+2026-05-27 11:58:28,909 [INFO] Publié → futurekawa/equateur/measures | Temp: 27.8°C | Hum: 49.0% | Status: OK
+2026-05-27 11:58:59,167 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 11:59:01,426 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.5°C | Hum: 56.0% | Status: ALERTE
+2026-05-27 11:59:01,427 [WARNING] Alerte publiée : Humidité trop élevée : 56.0% (attendu 44.0-54.0%)
+2026-05-27 11:59:31,686 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.5°C | Hum: 56.0% | Status: ALERTE
+2026-05-27 11:59:31,687 [WARNING] Alerte publiée : Humidité trop élevée : 56.0% (attendu 44.0-54.0%)
+2026-05-27 12:00:01,946 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.4°C | Hum: 52.0% | Status: OK
+2026-05-27 12:00:13,008 [INFO] Arrêt du module IoT FutureKawa...
+2026-05-27 12:00:13,511 [INFO] Nettoyage terminé. À bientôt.
+2026-05-27 12:00:50,122 [INFO] ==================================================
+2026-05-27 12:00:50,122 [INFO] FutureKawa IoT - Démarrage (EQUATEUR)
+2026-05-27 12:00:50,123 [INFO] Entrepôt : WH-EQ-01
+2026-05-27 12:00:50,123 [INFO] Seuils : Temp 24.8-30.8°C | Hum 44.0-54.0%
+2026-05-27 12:00:50,124 [INFO] ==================================================
+2026-05-27 12:00:50,124 [INFO] GPIO initialisé (mode BCM)
+2026-05-27 12:00:50,138 [INFO] Connexion au broker MQTT 192.168.1.17:1883...
+2026-05-27 12:00:50,148 [INFO] Démarrage des relevés toutes les 5s
+2026-05-27 12:00:50,149 [INFO] Connecté au broker MQTT (192.168.1.17:1883)
+2026-05-27 12:00:50,407 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.2°C | Hum: 51.0% | Status: OK
+2026-05-27 12:00:55,666 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 50.0% | Status: OK
+2026-05-27 12:01:00,925 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 50.0% | Status: OK
+2026-05-27 12:01:06,183 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 50.0% | Status: OK
+2026-05-27 12:01:11,441 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 12:01:13,699 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 50.0% | Status: OK
+2026-05-27 12:01:18,957 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 53.0% | Status: OK
+2026-05-27 12:01:24,216 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 12:01:26,473 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.3°C | Hum: 56.0% | Status: ALERTE
+2026-05-27 12:01:26,475 [WARNING] Alerte publiée : Humidité trop élevée : 56.0% (attendu 44.0-54.0%)
+2026-05-27 12:01:31,734 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.2°C | Hum: 56.0% | Status: ALERTE
+2026-05-27 12:01:31,736 [WARNING] Alerte publiée : Humidité trop élevée : 56.0% (attendu 44.0-54.0%)
+2026-05-27 12:01:36,994 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 12:01:39,252 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.2°C | Hum: 54.0% | Status: OK
+2026-05-27 12:01:44,514 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 12:01:46,772 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.2°C | Hum: 53.0% | Status: OK
+2026-05-27 12:01:52,030 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Received unplausible data. Try again.
+2026-05-27 12:01:54,288 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.2°C | Hum: 52.0% | Status: OK
+2026-05-27 12:01:59,547 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 52.0% | Status: OK
+2026-05-27 12:02:04,805 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.2°C | Hum: 51.0% | Status: OK
+2026-05-27 12:02:10,068 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.2°C | Hum: 51.0% | Status: OK
+2026-05-27 12:02:15,326 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 51.0% | Status: OK
+2026-05-27 12:02:20,585 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 51.0% | Status: OK
+2026-05-27 12:02:25,844 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.2°C | Hum: 51.0% | Status: OK
+2026-05-27 12:02:31,102 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 50.0% | Status: OK
+2026-05-27 12:02:36,363 [WARNING] Erreur lecture DHT11 (tentative 1/3) : Checksum did not validate. Try again.
+2026-05-27 12:02:38,621 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 50.0% | Status: OK
+2026-05-27 12:02:43,880 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 50.0% | Status: OK
+2026-05-27 12:02:49,139 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 50.0% | Status: OK
+2026-05-27 12:02:54,397 [INFO] Publié → futurekawa/equateur/measures | Temp: 28.1°C | Hum: 50.0% | Status: OK
+2026-05-27 12:02:56,893 [INFO] Arrêt du module IoT FutureKawa...
+2026-05-27 12:02:57,395 [INFO] Nettoyage terminé. À bientôt.
