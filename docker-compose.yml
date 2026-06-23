@@ -18,11 +18,25 @@ services:
     volumes:
       - ./docker/mosquitto/config:/mosquitto/config
 
+  # backend-country:
+  #   build: ./backend-country
+  #   container_name: backend-country
+  #   ports:
+  #     - "8001:8000"
+
   backend-country:
     build: ./backend-country
     container_name: backend-country
     ports:
-      - "8001:8000"
+    - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+      MQTT_TOPIC_MEASURES: futurekawa/equateur/measures
+    depends_on:
+      - postgres
+      - mosquitto
 
   backend-central:
     build: ./backend-central

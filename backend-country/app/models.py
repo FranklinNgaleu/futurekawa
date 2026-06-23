@@ -1,0 +1,36 @@
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.database import Base
+
+class Lot(Base):
+    __tablename__ = "lots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    lot_code = Column(String, unique=True, index=True, nullable=False)
+    country = Column(String, nullable=False)
+    farm = Column(String, nullable=False)
+    warehouse = Column(String, nullable=False)
+    storage_date = Column(DateTime, nullable=False)
+    status = Column(String, default="conforme")
+
+    measurements = relationship("Measurement", back_populates="lot")
+
+
+class Measurement(Base):
+    __tablename__ = "measurements"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    lot_id = Column(Integer, ForeignKey("lots.id"), nullable=True)
+
+    country = Column(String, nullable=False)
+    warehouse = Column(String, nullable=False)
+
+    temperature = Column(Float, nullable=False)
+    humidity = Column(Float, nullable=False)
+
+    status = Column(String, default="OK")
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    lot = relationship("Lot", back_populates="measurements")
