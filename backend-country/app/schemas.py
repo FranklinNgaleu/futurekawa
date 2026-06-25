@@ -27,3 +27,17 @@ class MeasurementResponse(MeasurementCreate):
 
     class Config:
         from_attributes = True
+
+class AlertResponse(BaseModel):
+    id: int
+    country: str
+    warehouse: str
+    timestamp: datetime
+    type: str
+    message: str
+    value: float
+    min: Optional[float] = None
+    max: Optional[float] = None
+
+    class Config:
+        from_attributes = True

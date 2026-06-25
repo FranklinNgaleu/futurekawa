@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 
 from app.database import get_db
 from app.models import Lot, Measurement
-from app.schemas import LotCreate, LotResponse, MeasurementCreate, MeasurementResponse
+from app.schemas import AlertResponse, LotCreate, LotResponse, MeasurementCreate, MeasurementResponse
+from app.models import Lot, Measurement, Alert
 
 router = APIRouter()
 
@@ -108,3 +109,7 @@ def get_measurements(db: Session = Depends(get_db)):
     return db.query(Measurement)\
              .order_by(Measurement.timestamp.desc())\
              .all()
+
+@router.get("/alerts", response_model=list[AlertResponse])
+def get_alerts(db: Session = Depends(get_db)):
+    return db.query(Alert).order_by(Alert.timestamp.desc()).all()

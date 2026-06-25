@@ -34,3 +34,18 @@ class Measurement(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     lot = relationship("Lot", back_populates="measurements")
+
+class Alert(Base):
+    __tablename__ = "alerts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    country = Column(String, nullable=False)
+    warehouse = Column(String, nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+
+    type = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+
+    value = Column(Float, nullable=False)
+    min = Column(Float, nullable=True)
+    max = Column(Float, nullable=True)

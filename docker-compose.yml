@@ -34,6 +34,7 @@ services:
       MQTT_HOST: mosquitto
       MQTT_PORT: 1883
       MQTT_TOPIC_MEASURES: futurekawa/equateur/measures
+      MQTT_TOPIC_ALERTS: futurekawa/equateur/alerts
     depends_on:
       - postgres
       - mosquitto
@@ -43,6 +44,10 @@ services:
     container_name: backend-central
     ports:
       - "8000:8000"
+    environment:
+      COUNTRY_BACKEND_URL: http://backend-country:8000
+    depends_on:
+      - backend-country
 
   frontend:
     build: ./frontend
