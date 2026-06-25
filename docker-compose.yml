@@ -9,6 +9,11 @@ services:
       POSTGRES_PASSWORD: futurekawa
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U futurekawa -d futurekawa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   mosquitto:
     image: eclipse-mosquitto:2
@@ -35,9 +40,18 @@ services:
       MQTT_PORT: 1883
       MQTT_TOPIC_MEASURES: futurekawa/equateur/measures
       MQTT_TOPIC_ALERTS: futurekawa/equateur/alerts
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
+      PYTHONUNBUFFERED: 1
+      
     depends_on:
-      - postgres
-      - mosquitto
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
 
   backend-central:
     build: ./backend-central

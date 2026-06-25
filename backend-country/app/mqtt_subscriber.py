@@ -6,6 +6,7 @@ import paho.mqtt.client as mqtt
 
 from app.database import SessionLocal
 from app.models import Lot, Measurement, Alert
+from app.email_service import send_alert_email
 
 MQTT_HOST = os.getenv("MQTT_HOST", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
@@ -99,6 +100,7 @@ def save_alert(payload):
             lot.status = "en alerte"
 
         db.commit()
+        send_alert_email(payload)
 
         print(f"Alerte MQTT enregistrée : {payload['message']}")
 
