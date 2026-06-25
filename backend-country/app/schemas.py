@@ -17,7 +17,7 @@ class LotResponse(LotCreate):
         from_attributes = True
 
 class MeasurementCreate(BaseModel):
-    lot_id: int
+    lot_id: Optional[int] = None
     temperature: float
     humidity: float
     timestamp: Optional[datetime] = None

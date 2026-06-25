@@ -6,7 +6,6 @@ import paho.mqtt.client as mqtt
 
 from app.database import SessionLocal
 from app.models import Lot, Measurement, Alert
-from app.email_service import send_alert_email
 from app.email_service import send_grouped_alert_email
 
 MQTT_HOST = os.getenv("MQTT_HOST", "mosquitto")
@@ -38,10 +37,7 @@ def get_country_thresholds(country: str):
 
 
 def build_alert_payload(payload: dict, alert_type: str, value: float, min_value: float, max_value: float):
-    if value < min_value:
-        direction = "trop basse"
-    else:
-        direction = "trop élevée"
+    direction = "trop basse" if value < min_value else "trop élevée"
 
     if alert_type == "TEMPERATURE_OUT_OF_RANGE":
         label = "Température"
@@ -104,7 +100,7 @@ def generate_alerts_from_measure(payload: dict):
     return alerts
 
 
-def save_alert(db, alert_payload: dict, lot: Lot | None = None):
+def save_alert(db, alert_payload: dict):
     alert = Alert(
         country=alert_payload["country"],
         warehouse=alert_payload["warehouse"],
@@ -118,9 +114,6 @@ def save_alert(db, alert_payload: dict, lot: Lot | None = None):
 
     db.add(alert)
 
-    if lot:
-        lot.status = "en alerte"
-
     print(f"Alerte générée par le backend : {alert_payload['message']}", flush=True)
 
 
@@ -128,42 +121,59 @@ def save_measure(payload: dict):
     db = SessionLocal()
 
     try:
-        lot = (
+        generated_alerts = generate_alerts_from_measure(payload)
+
+        lots = (
             db.query(Lot)
             .filter(
                 Lot.country == payload["country"],
                 Lot.warehouse == payload["warehouse"],
-                Lot.status != "périmé"
+                
             )
             .order_by(Lot.storage_date.asc())
-            .first()
+            .all()
         )
 
-        generated_alerts = generate_alerts_from_measure(payload)
+        measurement_status = "ALERT" if generated_alerts else "OK"
+        parsed_timestamp = parse_timestamp(payload.get("timestamp", datetime.utcnow().isoformat()))
 
-        measurement = Measurement(
-            lot_id=lot.id if lot else None,
-            country=payload["country"],
-            warehouse=payload["warehouse"],
-            timestamp=parse_timestamp(payload["timestamp"]),
-            temperature=payload["temperature"],
-            humidity=payload["humidity"],
-            status="ALERT" if generated_alerts else "OK"
-        )
+        if lots:
+            for lot in lots:
+                measurement = Measurement(
+                    lot_id=lot.id,
+                    country=payload["country"],
+                    warehouse=payload["warehouse"],
+                    timestamp=parsed_timestamp,
+                    temperature=payload["temperature"],
+                    humidity=payload["humidity"],
+                    status=measurement_status
+                )
 
-        db.add(measurement)
+                db.add(measurement)
+                lot.status = "en alerte" if generated_alerts else "conforme"
 
-        if lot:
-            lot.status = "en alerte" if generated_alerts else "conforme"
+        else:
+            measurement = Measurement(
+                lot_id=None,
+                country=payload["country"],
+                warehouse=payload["warehouse"],
+                timestamp=parsed_timestamp,
+                temperature=payload["temperature"],
+                humidity=payload["humidity"],
+                status=measurement_status
+            )
+
+            db.add(measurement)
 
         for alert_payload in generated_alerts:
-            save_alert(db, alert_payload, lot)
+            save_alert(db, alert_payload)
 
         db.commit()
 
         print(
-            f"Mesure enregistrée : {payload['temperature']}°C / {payload['humidity']}% "
-            f"- statut {measurement.status}",
+            f"Mesure enregistrée pour {len(lots)} lot(s) "
+            f"- {payload['temperature']}°C / {payload['humidity']}% "
+            f"- statut {measurement_status}",
             flush=True
         )
 
@@ -176,6 +186,7 @@ def save_measure(payload: dict):
 
     finally:
         db.close()
+
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -204,5 +215,4 @@ def start_mqtt_subscriber():
     client.on_message = on_message
 
     client.connect(MQTT_HOST, MQTT_PORT, 60)
-
     client.loop_start()
