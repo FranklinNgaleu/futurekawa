@@ -1,1 +1,309 @@
-<h1>FutureKawa Frontend OK</h1>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FutureKawa</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fafafa;--surface:#fff;--border:#eee;
+  --text:#111;--text2:#666;--text3:#999;
+  --green:#22863a;--orange:#cf7a00;--red:#d1242f;--blue:#0969da;
+  --radius:8px;--shadow:0 1px 2px rgba(0,0,0,.04);
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+/* Layout */
+.shell{display:flex;height:100vh}
+.side{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.side-head{padding:20px;border-bottom:1px solid var(--border)}
+.side-head h1{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.side-head p{font-size:11px;color:var(--text3);margin-top:2px}
+.side nav{padding:8px;flex:1}
+.side nav a{display:block;padding:8px 12px;border-radius:6px;color:var(--text2);text-decoration:none;font-size:13px;font-weight:500;margin-bottom:1px}
+.side nav a:hover{background:#f5f5f5;color:var(--text)}
+.side nav a.on{background:#f0f7f4;color:var(--green);font-weight:600}
+.side-foot{padding:12px 16px;border-top:1px solid var(--border)}
+.side-foot label{font-size:11px;color:var(--text3);display:block;margin-bottom:4px}
+.side-foot select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface)}
+
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.bar{padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center}
+.bar h2{font-size:15px;font-weight:600}
+.view{padding:24px 28px;flex:1}
+
+/* Cards */
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.kpi-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.kpi-val{font-size:28px;font-weight:700;line-height:1}
+.kpi-lab{font-size:11px;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:.3px}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
+.card-h{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-h h3{font-size:13px;font-weight:600}
+.card-b{padding:16px}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;font-weight:600;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border)}
+td{padding:8px 12px;border-bottom:1px solid #f5f5f5}
+tr:hover td{background:#fafafa}
+
+/* Badge */
+.b{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.b-ok{background:#dafbe1;color:var(--green)}
+.b-warn{background:#fff8c5;color:var(--orange)}
+.b-err{background:#ffebe9;color:var(--red)}
+.b-info{background:#ddf4ff;color:var(--blue)}
+.fifo{font-size:10px;font-weight:700;color:var(--orange);border:1px solid var(--orange);padding:1px 6px;border-radius:4px;margin-left:6px}
+
+/* Btn */
+.btn{display:inline-block;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;text-decoration:none;border:1px solid var(--border);color:var(--text);background:var(--surface);cursor:pointer}
+.btn:hover{background:#f5f5f5}
+.btn-p{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-p:hover{opacity:.9}
+
+/* Chart */
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.chart-box h3{font-size:13px;font-weight:600;margin-bottom:4px}
+.chart-box small{font-size:11px;color:var(--text3)}
+.chart-box canvas{margin-top:8px}
+
+/* Detail */
+.lot-head{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.lot-head h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.lot-meta{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text2)}
+
+/* Alert list */
+.a-item{padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
+.a-item:last-child{border:none}
+.a-time{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* States */
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+.loading{text-align:center;padding:60px;color:var(--text3)}
+.dot{width:6px;height:6px;background:var(--text3);border-radius:50%;display:inline-block;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.error{text-align:center;padding:40px;color:var(--red);font-size:13px}
+
+.back{font-size:12px;color:var(--text2);text-decoration:none;margin-bottom:12px;display:inline-block}
+.back:hover{color:var(--text)}
+
+/* Responsive */
+@media(max-width:768px){
+  .side{display:none}
+  .row2,.charts-g{grid-template-columns:1fr!important}
+  .view{padding:16px}
+  .kpi{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="side-head">
+      <h1>FutureKawa</h1>
+      <p>Suivi des stocks</p>
+    </div>
+    <nav>
+      <a href="#dashboard" data-p="dashboard" class="on">Tableau de bord</a>
+      <a href="#lots" data-p="lots">Stocks</a>
+      <a href="#alerts" data-p="alerts">Alertes</a>
+    </nav>
+    <div class="side-foot">
+      <label>Pays</label>
+      <select id="cSel"></select>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="bar"><h2 id="title">Tableau de bord</h2></div>
+    <div class="view" id="view">
+      <div class="loading"><span class="dot"></span><span class="dot" style="animation-delay:.2s"></span><span class="dot" style="animation-delay:.4s"></span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const A='/api';
+let charts={},country='equateur';
+const TH={equateur:{t:31,h:60,tt:3,ht:2},bresil:{t:29,h:55,tt:3,ht:2},colombie:{t:26,h:80,tt:3,ht:2}};
+
+async function f(p){const r=await fetch(A+p);if(!r.ok)throw new Error(r.status);return r.json()}
+function fd(d){return new Date(d).toLocaleDateString('fr-FR')}
+function fdt(d){const x=new Date(d);return x.toLocaleDateString('fr-FR')+' '+x.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
+function fs(d){const x=new Date(d);return(x.getDate()+'').padStart(2,'0')+'/'+(x.getMonth()+1+'').padStart(2,'0')+' '+x.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
+function age(d){return Math.floor((Date.now()-new Date(d))/864e5)}
+function sb(s){const m={conforme:'b-ok','en alerte':'b-warn','périmé':'b-err'};return`<span class="b ${m[s]||'b-info'}">${s}</span>`}
+function dc(){Object.values(charts).forEach(c=>c.destroy());charts={}}
+function gt(){const t=TH[country]||TH.equateur;return{tmin:t.t-t.tt,tmax:t.t+t.tt,hmin:t.h-t.ht,hmax:t.h+t.ht}}
+function $v(){return document.getElementById('view')}
+function loading(){$v().innerHTML='<div class="loading"><span class="dot"></span><span class="dot" style="animation-delay:.2s"></span><span class="dot" style="animation-delay:.4s"></span></div>'}
+function err(m){$v().innerHTML=`<div class="error">${m}<br><br><button class="btn" onclick="go()">Reessayer</button></div>`}
+
+// Dashboard
+async function rDash(){
+  loading();
+  try{
+    const d=await f('/dashboard');
+    const lots=d.lots||[],s=d.statistics||{};
+    const exp=lots.filter(l=>l.status==='périmé').length;
+    const alerts=d.recent_alerts||[];
+    const meas=d.recent_measurements||[];
+
+    $v().innerHTML=`
+      <div class="kpi">
+        <div class="kpi-item"><div class="kpi-val">${s.total_lots||0}</div><div class="kpi-lab">Lots total</div></div>
+        <div class="kpi-item"><div class="kpi-val" style="color:var(--green)">${s.healthy_lots||0}</div><div class="kpi-lab">Conformes</div></div>
+        <div class="kpi-item"><div class="kpi-val" style="color:var(--orange)">${s.alert_lots||0}</div><div class="kpi-lab">En alerte</div></div>
+        <div class="kpi-item"><div class="kpi-val" style="color:var(--red)">${exp}</div><div class="kpi-lab">Perimes</div></div>
+        <div class="kpi-item"><div class="kpi-val">${s.total_measurements||0}</div><div class="kpi-lab">Mesures</div></div>
+      </div>
+      <div class="row2">
+        <div class="card">
+          <div class="card-h"><h3>Alertes recentes</h3><a href="#alerts" class="btn" style="font-size:11px">Voir tout</a></div>
+          <div class="card-b" id="dA"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Dernieres mesures</h3></div>
+          <div class="card-b" id="dM"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Lots — ordre FIFO</h3><a href="#lots" class="btn" style="font-size:11px">Voir tout</a></div>
+        <div class="card-b" id="dL"></div>
+      </div>`;
+
+    const $a=document.getElementById('dA');
+    $a.innerHTML=alerts.length?alerts.map(a=>`<div class="a-item">${a.message}<div class="a-time">${fdt(a.timestamp)} · ${a.warehouse}</div></div>`).join(''):'<div class="empty">Aucune alerte</div>';
+
+    const $m=document.getElementById('dM');
+    $m.innerHTML=meas.length?`<table><thead><tr><th>Date</th><th>Temp</th><th>Hum</th><th>Statut</th></tr></thead><tbody>${meas.map(m=>`<tr><td>${fdt(m.timestamp)}</td><td>${m.temperature}°C</td><td>${m.humidity}%</td><td>${m.status==='OK'?'<span class="b b-ok">OK</span>':'<span class="b b-warn">Alerte</span>'}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Aucune mesure</div>';
+
+    lotTable(document.getElementById('dL'),lots.slice(0,8),true);
+  }catch(e){err('Backend indisponible')}
+}
+
+// Lot table
+function lotTable(el,lots,compact){
+  if(!lots.length){el.innerHTML='<div class="empty">Aucun lot</div>';return}
+  const nonExpired=lots.filter(l=>l.status!=='périmé');
+  const firstId=nonExpired.length?nonExpired[0].id:null;
+  el.innerHTML=`<table><thead><tr><th>Code</th>${compact?'':'<th>Pays</th>'}<th>Exploitation</th><th>Entrepot</th><th>Stockage</th><th>Statut</th><th></th></tr></thead><tbody>${lots.map(l=>{
+    const f=l.id===firstId?'<span class="fifo">FIFO</span>':'';
+    return`<tr><td><strong>${l.lot_code}</strong>${f}</td>${compact?'':`<td>${l.country}</td>`}<td>${l.farm}</td><td>${l.warehouse}</td><td>${fd(l.storage_date)}<br><span style="font-size:11px;color:var(--text3)">${age(l.storage_date)}j</span></td><td>${sb(l.status)}</td><td><a href="#lot/${l.id}" class="btn btn-p" style="font-size:11px">Voir</a></td></tr>`}).join('')}</tbody></table>`}
+
+// Lots page
+async function rLots(){
+  loading();
+  try{
+    const d=await f(`/lots?country=${country}`);
+    const lots=d.lots||[];
+    $v().innerHTML=`<div style="margin-bottom:16px"><p style="font-size:12px;color:var(--text3)">${lots.length} lot(s) — tries par date (FIFO)</p></div><div class="card"><div class="card-b" id="lT"></div></div>`;
+    lotTable(document.getElementById('lT'),lots,false);
+  }catch(e){err('Impossible de charger les lots')}
+}
+
+// Lot detail
+async function rLot(id){
+  loading();dc();
+  try{
+    const[ld,md]=await Promise.all([f(`/lots/${id}`),f(`/lots/${id}/measurements`)]);
+    const lot=ld.lot,meas=md.measurements||[];
+    const th=gt();
+
+    $v().innerHTML=`
+      <a href="#lots" class="back">← Retour</a>
+      <div class="lot-head">
+        <h2>${lot.lot_code} ${sb(lot.status)}</h2>
+        <div class="lot-meta">
+          <span>Pays : ${lot.country}</span>
+          <span>Exploitation : ${lot.farm}</span>
+          <span>Entrepot : ${lot.warehouse}</span>
+          <span>Stocke le : ${fd(lot.storage_date)} (${age(lot.storage_date)}j)</span>
+        </div>
+      </div>
+      ${meas.length?`
+        <div class="row2" style="margin-bottom:16px">
+          <div class="chart-box"><h3>Temperature</h3><small>Seuils : ${th.tmin}°C — ${th.tmax}°C</small><canvas id="cT"></canvas></div>
+          <div class="chart-box"><h3>Humidite</h3><small>Seuils : ${th.hmin}% — ${th.hmax}%</small><canvas id="cH"></canvas></div>
+        </div>
+        <div class="card"><div class="card-h"><h3>Mesures (${meas.length})</h3></div><div class="card-b">
+          <table><thead><tr><th>Date</th><th>Temperature</th><th>Humidite</th></tr></thead><tbody>${meas.map(m=>`<tr><td>${fdt(m.timestamp)}</td><td>${m.temperature}°C</td><td>${m.humidity}%</td></tr>`).join('')}</tbody></table>
+        </div></div>
+      `:'<div class="card"><div class="card-b empty">Aucune mesure pour ce lot</div></div>'}`;
+
+    if(meas.length)mkCharts(meas,th);
+  }catch(e){err('Impossible de charger ce lot')}
+}
+
+// Charts
+function mkCharts(meas,th){
+  const labels=meas.map(m=>fs(m.timestamp));
+  const opts={responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{position:'bottom',labels:{usePointStyle:true,font:{size:11},padding:12}},tooltip:{padding:8,cornerRadius:4}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}}}};
+  const dash=[5,4];
+
+  charts.t=new Chart(document.getElementById('cT'),{type:'line',data:{labels,datasets:[
+    {label:'Temp (°C)',data:meas.map(m=>m.temperature),borderColor:'#cf7a00',backgroundColor:'rgba(207,122,0,.05)',fill:true,tension:.3,pointRadius:2,borderWidth:1.5},
+    {label:`Max ${th.tmax}°C`,data:meas.map(()=>th.tmax),borderColor:'rgba(209,36,47,.4)',borderDash:dash,pointRadius:0,borderWidth:1,fill:false},
+    {label:`Min ${th.tmin}°C`,data:meas.map(()=>th.tmin),borderColor:'rgba(209,36,47,.4)',borderDash:dash,pointRadius:0,borderWidth:1,fill:false}
+  ]},options:{...opts,scales:{...opts.scales,y:{title:{display:true,text:'°C',font:{size:11}}}}}});
+
+  charts.h=new Chart(document.getElementById('cH'),{type:'line',data:{labels,datasets:[
+    {label:'Hum (%)',data:meas.map(m=>m.humidity),borderColor:'#0969da',backgroundColor:'rgba(9,105,218,.05)',fill:true,tension:.3,pointRadius:2,borderWidth:1.5},
+    {label:`Max ${th.hmax}%`,data:meas.map(()=>th.hmax),borderColor:'rgba(209,36,47,.4)',borderDash:dash,pointRadius:0,borderWidth:1,fill:false},
+    {label:`Min ${th.hmin}%`,data:meas.map(()=>th.hmin),borderColor:'rgba(209,36,47,.4)',borderDash:dash,pointRadius:0,borderWidth:1,fill:false}
+  ]},options:{...opts,scales:{...opts.scales,y:{title:{display:true,text:'%',font:{size:11}}}}}});
+}
+
+// Alerts
+async function rAlerts(){
+  loading();
+  try{
+    const d=await f(`/alerts?country=${country}`);
+    const alerts=d.alerts||[];
+    if(!alerts.length){$v().innerHTML='<div class="card"><div class="card-b empty">Aucune alerte</div></div>';return}
+    $v().innerHTML=`<p style="font-size:12px;color:var(--text3);margin-bottom:12px">${alerts.length} alerte(s)</p>
+      <div class="card"><div class="card-b"><table><thead><tr><th>Date</th><th>Entrepot</th><th>Type</th><th>Message</th><th>Valeur</th><th>Seuils</th></tr></thead><tbody>${alerts.map(a=>`<tr>
+        <td style="white-space:nowrap">${fdt(a.timestamp)}</td><td>${a.warehouse}</td>
+        <td>${a.type.includes('TEMP')?'<span class="b b-warn">Temp</span>':'<span class="b b-info">Hum</span>'}</td>
+        <td>${a.message}</td><td><strong>${a.value}</strong></td>
+        <td>${a.min!=null?a.min+' — '+a.max:'-'}</td></tr>`).join('')}</tbody></table></div></div>`;
+  }catch(e){err('Impossible de charger les alertes')}
+}
+
+// Nav
+const titles={dashboard:'Tableau de bord',lots:'Stocks',alerts:'Alertes'};
+function setNav(p){document.querySelectorAll('.side nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p))}
+
+function go(){
+  dc();
+  const h=location.hash.slice(1)||'dashboard';
+  const p=h.split('/');
+  if(p[0]==='lot'&&p[1]){document.getElementById('title').textContent='Detail du lot';setNav('lots');rLot(p[1])}
+  else if(p[0]==='lots'){document.getElementById('title').textContent=titles.lots;setNav('lots');rLots()}
+  else if(p[0]==='alerts'){document.getElementById('title').textContent=titles.alerts;setNav('alerts');rAlerts()}
+  else{document.getElementById('title').textContent=titles.dashboard;setNav('dashboard');rDash()}
+}
+
+// Countries
+async function initC(){
+  try{
+    const d=await f('/countries');
+    const sel=document.getElementById('cSel');
+    sel.innerHTML='';
+    (d.countries||[]).forEach(c=>{const o=document.createElement('option');o.value=c.code==='EC'?'equateur':c.code==='BR'?'bresil':'colombie';o.textContent=c.name;o.disabled=!c.enabled;if(c.enabled)o.selected=true;sel.appendChild(o)});
+    country=sel.value;
+    sel.onchange=()=>{country=sel.value;go()};
+  }catch(e){document.getElementById('cSel').innerHTML='<option value="equateur">Equateur</option>'}
+}
+
+window.onhashchange=go;
+initC().then(go);
+</script>
+</body>
+</html>
