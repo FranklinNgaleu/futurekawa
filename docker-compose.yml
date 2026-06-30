@@ -34,16 +34,13 @@ services:
     container_name: backend-country
     ports:
     - "8001:8000"
+    env_file:
+    -  ./backend-country/.env
     environment:
       DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa
       MQTT_HOST: mosquitto
       MQTT_PORT: 1883
       MQTT_TOPIC_MEASURES: futurekawa/equateur/measures
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
       PYTHONUNBUFFERED: 1
       
     depends_on:
