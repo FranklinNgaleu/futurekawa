@@ -62,15 +62,10 @@ pipeline {
             steps {
                 bat '''
                 docker run --rm ^
+                -e SONAR_HOST_URL=http://host.docker.internal:9000 ^
+                -e SONAR_TOKEN=%SONAR_TOKEN% ^
                 -v "%cd%:/usr/src" ^
-                sonarsource/sonar-scanner-cli ^
-                -Dsonar.projectKey=futurekawa ^
-                -Dsonar.projectName=FutureKawa ^
-                -Dsonar.sources=backend-country,backend-central ^
-                -Dsonar.tests=tests ^
-                -Dsonar.python.coverage.reportPaths=coverage.xml ^
-                -Dsonar.host.url=http://host.docker.internal:9000 ^
-                -Dsonar.login=%SONAR_TOKEN%
+                sonarsource/sonar-scanner-cli
                 '''
             }
         }
