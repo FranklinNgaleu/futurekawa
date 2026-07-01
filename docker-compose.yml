@@ -35,14 +35,15 @@ services:
     ports:
     - "8001:8000"
     env_file:
-    -  ./backend-country/.env
+    - path: ./backend-country/.env
+      required: false
     environment:
       DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa
       MQTT_HOST: mosquitto
       MQTT_PORT: 1883
       MQTT_TOPIC_MEASURES: futurekawa/equateur/measures
       PYTHONUNBUFFERED: 1
-      
+        
     depends_on:
       postgres:
         condition: service_healthy

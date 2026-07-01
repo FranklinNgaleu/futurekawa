@@ -1,38 +1,56 @@
 pipeline {
     agent any
 
+    environment {
+        SMTP_HOST = 'smtp.gmail.com'
+        SMTP_PORT = '587'
+        SMTP_USER = credentials('smtp_user')
+        SMTP_PASSWORD = credentials('smtp_password')
+        ALERT_EMAIL_TO = credentials('smtp_user')
+    }
+
     stages {
+
         stage('Checkout') {
             steps {
-                echo 'Récupération du code source'
                 checkout scm
+            }
+        }
+
+        stage('Prepare .env') {
+            steps {
+                bat '''
+                (
+                echo SMTP_HOST=%SMTP_HOST%
+                echo SMTP_PORT=%SMTP_PORT%
+                echo SMTP_USER=%SMTP_USER%
+                echo SMTP_PASSWORD=%SMTP_PASSWORD%
+                echo ALERT_EMAIL_TO=%ALERT_EMAIL_TO%
+                ) > backend-country\\.env
+                '''
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                echo 'Build des images Docker'
                 bat 'docker compose build'
             }
         }
 
         stage('Start Services') {
             steps {
-                echo 'Démarrage des services FutureKawa'
                 bat 'docker compose up -d'
             }
         }
 
         stage('Wait for APIs') {
             steps {
-                echo 'Attente du démarrage des APIs'
-                bat 'powershell -Command "Start-Sleep -Seconds 15"'
+                bat 'powershell -Command "Start-Sleep -Seconds 20"'
             }
         }
 
-        stage('Run API Tests') {
+        stage('Run Tests') {
             steps {
-                echo 'Exécution des tests API'
                 bat 'pip install -r tests/requirements.txt'
                 bat 'pytest tests/api -v'
             }
@@ -41,8 +59,13 @@ pipeline {
 
     post {
         always {
-            echo 'Arrêt des conteneurs Docker'
             bat 'docker compose down'
+
+            bat '''
+            if exist backend-country\\.env (
+                del backend-country\\.env
+            )
+            '''
         }
 
         success {
