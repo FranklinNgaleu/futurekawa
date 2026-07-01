@@ -51,8 +51,8 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                bat 'python -m pip install -r tests/requirements.txt'
-                bat 'python -m pytest tests/api -v'
+                bat '"C:\\Users\\frank\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" -m pip install -r tests/requirements.txt'
+                bat '"C:\\Users\\frank\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" -m pytest tests/api -v'
             }
         }
     }
