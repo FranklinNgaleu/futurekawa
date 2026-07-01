@@ -61,8 +61,16 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 bat '''
-                C:\\sonar-scanner\\bin\\sonar-scanner.bat ^
-                -Dsonar.host.url=%SONAR_HOST_URL% ^
+                docker run --rm ^
+                --network=host ^
+                -v "%cd%:/usr/src" ^
+                sonarsource/sonar-scanner-cli ^
+                -Dsonar.projectKey=futurekawa ^
+                -Dsonar.projectName=FutureKawa ^
+                -Dsonar.sources=backend-country,backend-central ^
+                -Dsonar.tests=tests ^
+                -Dsonar.python.coverage.reportPaths=coverage.xml ^
+                -Dsonar.host.url=http://host.docker.internal:9000 ^
                 -Dsonar.token=%SONAR_TOKEN%
                 '''
             }
