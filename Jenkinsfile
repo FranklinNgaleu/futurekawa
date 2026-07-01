@@ -7,6 +7,8 @@ pipeline {
         SMTP_USER = credentials('smtp_user')
         SMTP_PASSWORD = credentials('smtp_password')
         ALERT_EMAIL_TO = credentials('smtp_user')
+        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_HOST_URL = 'http://localhost:9000'
     }
 
     stages {
@@ -52,7 +54,17 @@ pipeline {
         stage('Run Tests') {
             steps {
                 bat '"C:\\Users\\frank\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" -m pip install -r tests/requirements.txt'
-                bat '"C:\\Users\\frank\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" -m pytest tests/api -v'
+                bat '"C:\\Users\\frank\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" -m pytest tests/api -v --cov=. --cov-report=xml'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                bat '''
+                C:\\sonar-scanner\\bin\\sonar-scanner.bat ^
+                -Dsonar.host.url=%SONAR_HOST_URL% ^
+                -Dsonar.token=%SONAR_TOKEN%
+                '''
             }
         }
     }
