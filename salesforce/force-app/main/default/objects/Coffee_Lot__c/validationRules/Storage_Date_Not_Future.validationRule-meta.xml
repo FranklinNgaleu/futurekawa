@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Storage_Date_Not_Future</fullName>
+    <active>true</active>
+    <errorConditionFormula>Storage_Date__c &gt; TODAY()</errorConditionFormula>
+    <errorMessage>La date de stockage ne peut pas être dans le futur.</errorMessage>
+</ValidationRule>

@@ -1,14 +1,18 @@
 from datetime import datetime, timedelta
 
 from app.database import SessionLocal
-from app.models import Lot
+from app.models import Alert, Lot
+from app.email_service import send_alert_email
+
+LOT_EXPIRATION_DAYS = 365
 
 
 def check_expired_lots():
     db = SessionLocal()
 
     try:
-        expiration_limit = datetime.utcnow() - timedelta(days=365)
+        now = datetime.utcnow()
+        expiration_limit = now - timedelta(days=LOT_EXPIRATION_DAYS)
 
         expired_lots = (
             db.query(Lot)
@@ -21,6 +25,34 @@ def check_expired_lots():
 
         for lot in expired_lots:
             lot.status = "périmé"
+            age_days = (now - lot.storage_date).days
+
+            alert_payload = {
+                "country": lot.country,
+                "warehouse": lot.warehouse,
+                "timestamp": now.isoformat(),
+                "type": "LOT_EXPIRED",
+                "message": (
+                    f"Lot {lot.lot_code} périmé : stocké le "
+                    f"{lot.storage_date.strftime('%Y-%m-%d')} ({age_days} jours)"
+                ),
+                "value": age_days,
+                "min": None,
+                "max": LOT_EXPIRATION_DAYS,
+            }
+
+            db.add(Alert(
+                country=alert_payload["country"],
+                warehouse=alert_payload["warehouse"],
+                timestamp=now,
+                type=alert_payload["type"],
+                message=alert_payload["message"],
+                value=alert_payload["value"],
+                min=alert_payload["min"],
+                max=alert_payload["max"],
+            ))
+
+            send_alert_email(alert_payload)
 
         db.commit()
 

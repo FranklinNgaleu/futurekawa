@@ -7,6 +7,7 @@ import paho.mqtt.client as mqtt
 from app.database import SessionLocal
 from app.models import Lot, Measurement, Alert
 from app.email_service import send_grouped_alert_email
+from app.thresholds import get_country_thresholds, TEMP_TOLERANCE, HUMIDITY_TOLERANCE
 
 MQTT_HOST = os.getenv("MQTT_HOST", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
@@ -16,24 +17,9 @@ MQTT_TOPIC_MEASURES = os.getenv(
     "futurekawa/equateur/measures"
 )
 
-COUNTRY_THRESHOLDS = {
-    "bresil": {"temperature": 29, "humidity": 55},
-    "brésil": {"temperature": 29, "humidity": 55},
-    "equateur": {"temperature": 31, "humidity": 60},
-    "équateur": {"temperature": 31, "humidity": 60},
-    "colombie": {"temperature": 26, "humidity": 80},
-}
-
-TEMP_TOLERANCE = 3
-HUMIDITY_TOLERANCE = 2
-
 
 def parse_timestamp(value: str):
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
-
-
-def get_country_thresholds(country: str):
-    return COUNTRY_THRESHOLDS.get(country.lower())
 
 
 def build_alert_payload(payload: dict, alert_type: str, value: float, min_value: float, max_value: float):

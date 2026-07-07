@@ -9,6 +9,8 @@ services:
       POSTGRES_PASSWORD: futurekawa
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U futurekawa -d futurekawa"]
       interval: 5s
@@ -22,18 +24,15 @@ services:
       - "1883:1883"
     volumes:
       - ./docker/mosquitto/config:/mosquitto/config
-
-  # backend-country:
-  #   build: ./backend-country
-  #   container_name: backend-country
-  #   ports:
-  #     - "8001:8000"
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
 
   backend-country:
     build: ./backend-country
+    image: futurekawa/backend-country:latest
     container_name: backend-country
     ports:
-    - "8001:8000"
+      - "8001:8000"
     environment:
       DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa
       MQTT_HOST: mosquitto
@@ -44,26 +43,50 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
+      EXPIRED_LOTS_CHECK_INTERVAL_MINUTES: ${EXPIRED_LOTS_CHECK_INTERVAL_MINUTES:-60}
       PYTHONUNBUFFERED: 1
-      
     depends_on:
       postgres:
         condition: service_healthy
       mosquitto:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   backend-central:
     build: ./backend-central
+    image: futurekawa/backend-central:latest
     container_name: backend-central
     ports:
       - "8000:8000"
     environment:
       COUNTRY_BACKEND_URL: http://backend-country:8000
+      COUNTRY_BACKENDS: ${COUNTRY_BACKENDS:-}
     depends_on:
-      - backend-country
+      backend-country:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   frontend:
     build: ./frontend
+    image: futurekawa/frontend:latest
     container_name: frontend
     ports:
       - "3000:80"
+    depends_on:
+      backend-central:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  mosquitto_data:
+  mosquitto_log:

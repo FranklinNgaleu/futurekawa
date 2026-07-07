@@ -7,10 +7,10 @@ COUNTRY = "equateur"
 WAREHOUSE_ID = "WH-EQ-01"
 
 # --- Conditions idéales pour l'Équateur ---
-IDEAL_TEMP = 27.8       # °C
-IDEAL_HUMIDITY = 49.0   # %
+IDEAL_TEMP = 31.0       # °C
+IDEAL_HUMIDITY = 60.0   # %
 TOLERANCE_TEMP = 3.0    # ±3°C
-TOLERANCE_HUMIDITY = 5.0  # ±2%
+TOLERANCE_HUMIDITY = 2.0  # ±2%
 
 # Seuils calculés
 TEMP_MIN = IDEAL_TEMP - TOLERANCE_TEMP       # 28°C

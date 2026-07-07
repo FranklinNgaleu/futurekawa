@@ -1,0 +1,7 @@
+pytest
+pytest-cov
+requests
+sqlalchemy
+python-dotenv
+selenium
+webdriver-manager

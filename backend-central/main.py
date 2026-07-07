@@ -1,11 +1,34 @@
+import json
 import os
-import requests
-from fastapi import FastAPI, HTTPException
 
-COUNTRY_BACKEND_URL = os.getenv(
-    "COUNTRY_BACKEND_URL",
-    "http://backend-country:8000"
-)
+import requests
+from fastapi import Body, FastAPI, HTTPException
+
+DEFAULT_COUNTRY = "equateur"
+
+COUNTRY_DISPLAY_NAMES = {
+    "bresil": "Brésil",
+    "equateur": "Équateur",
+    "colombie": "Colombie",
+}
+
+
+def load_country_backends():
+    raw = os.getenv("COUNTRY_BACKENDS")
+
+    if raw:
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict) and parsed:
+                return parsed
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    fallback_url = os.getenv("COUNTRY_BACKEND_URL", "http://backend-country:8000")
+    return {DEFAULT_COUNTRY: fallback_url}
+
+
+COUNTRY_BACKENDS = load_country_backends()
 
 app = FastAPI(
     title="FutureKawa Backend Central",
@@ -14,20 +37,42 @@ app = FastAPI(
 )
 
 
-def call_country_api(endpoint: str):
-    try:
-        response = requests.get(
-            f"{COUNTRY_BACKEND_URL}/{endpoint}",
-            timeout=5
+def get_backend_url(country: str) -> str:
+    url = COUNTRY_BACKENDS.get(country.lower())
+
+    if not url:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Pays inconnu ou non activé : {country}"
         )
+
+    return url
+
+
+def call_country_api(country: str, endpoint: str):
+    base_url = get_backend_url(country)
+
+    try:
+        response = requests.get(f"{base_url}/{endpoint}", timeout=5)
         response.raise_for_status()
         return response.json()
 
     except requests.RequestException as e:
         raise HTTPException(
             status_code=503,
-            detail=f"Impossible de contacter le backend pays : {str(e)}"
+            detail=f"Impossible de contacter le backend pays ({country}) : {str(e)}"
         )
+
+
+def build_statistics(lots: list, measurements: list, alerts: list) -> dict:
+    return {
+        "total_lots": len(lots),
+        "total_measurements": len(measurements),
+        "total_alerts": len(alerts),
+        "healthy_lots": len([lot for lot in lots if lot.get("status") == "conforme"]),
+        "alert_lots": len([lot for lot in lots if lot.get("status") == "en alerte"]),
+        "expired_lots": len([lot for lot in lots if lot.get("status") == "périmé"]),
+    }
 
 
 @app.get("/")
@@ -44,80 +89,139 @@ def health():
 def get_countries():
     return {
         "countries": [
-            {"code": "BR", "name": "Brésil", "enabled": False},
-            {"code": "EC", "name": "Équateur", "enabled": True},
-            {"code": "CO", "name": "Colombie", "enabled": False}
+            {
+                "id": code,
+                "name": COUNTRY_DISPLAY_NAMES.get(code, code),
+                "enabled": code in COUNTRY_BACKENDS
+            }
+            for code in COUNTRY_DISPLAY_NAMES
         ]
     }
 
 
 @app.get("/lots")
-def get_lots(country: str = "equateur"):
+def get_lots(country: str = DEFAULT_COUNTRY):
     return {
         "country": country,
-        "lots": call_country_api("lots")
+        "lots": call_country_api(country, "lots")
     }
 
 
+@app.post("/lots", status_code=201)
+def create_lot(payload: dict = Body(...), country: str = DEFAULT_COUNTRY):
+    base_url = get_backend_url(country)
+
+    try:
+        response = requests.post(f"{base_url}/lots", json=payload, timeout=5)
+    except requests.RequestException as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Impossible de contacter le backend pays ({country}) : {str(e)}"
+        )
+
+    if response.status_code >= 400:
+        try:
+            detail = response.json().get("detail", response.text)
+        except ValueError:
+            detail = response.text
+
+        raise HTTPException(status_code=response.status_code, detail=detail)
+
+    return response.json()
+
+
 @app.get("/lots/{lot_id}")
-def get_lot_detail(lot_id: int):
+def get_lot_detail(lot_id: int, country: str = DEFAULT_COUNTRY):
     return {
-        "lot": call_country_api(f"lots/{lot_id}")
+        "country": country,
+        "lot": call_country_api(country, f"lots/{lot_id}")
     }
 
 
 @app.get("/lots/{lot_id}/measurements")
-def get_lot_measurements(lot_id: int):
+def get_lot_measurements(lot_id: int, country: str = DEFAULT_COUNTRY):
     return {
+        "country": country,
         "lot_id": lot_id,
-        "measurements": call_country_api(f"lots/{lot_id}/measurements")
+        "measurements": call_country_api(country, f"lots/{lot_id}/measurements")
     }
 
 
 @app.get("/stocks")
-def get_all_stocks():
+def get_all_stocks(country: str = DEFAULT_COUNTRY):
     return {
-        "country": "equateur",
-        "stocks": call_country_api("lots")
+        "country": country,
+        "stocks": call_country_api(country, "lots")
     }
 
 
 @app.get("/measurements")
-def get_all_measurements():
+def get_all_measurements(country: str = DEFAULT_COUNTRY):
     return {
-        "country": "equateur",
-        "measurements": call_country_api("measurements")
+        "country": country,
+        "measurements": call_country_api(country, "measurements")
     }
 
 
 @app.get("/alerts")
-def get_alerts(country: str = "equateur"):
+def get_alerts(country: str = DEFAULT_COUNTRY):
     return {
         "country": country,
-        "alerts": call_country_api("alerts")
+        "alerts": call_country_api(country, "alerts")
     }
 
 
 @app.get("/dashboard")
-def dashboard():
-    lots = call_country_api("lots")
-    measurements = call_country_api("measurements")
-    alerts = call_country_api("alerts")
+def dashboard(country: str = DEFAULT_COUNTRY):
+    lots = call_country_api(country, "lots")
+    measurements = call_country_api(country, "measurements")
+    alerts = call_country_api(country, "alerts")
 
     return {
-        "country": "equateur",
-        "statistics": {
-            "total_lots": len(lots),
-            "total_measurements": len(measurements),
-            "total_alerts": len(alerts),
-            "healthy_lots": len(
-                [lot for lot in lots if lot["status"] == "conforme"]
-            ),
-            "alert_lots": len(
-                [lot for lot in lots if lot["status"] == "en alerte"]
-            ),
-        },
+        "country": country,
+        "statistics": build_statistics(lots, measurements, alerts),
         "lots": lots,
         "recent_measurements": measurements[:10],
         "recent_alerts": alerts[:5]
+    }
+
+
+@app.get("/dashboard/global")
+def dashboard_global():
+    countries_data = {}
+
+    totals = {
+        "total_lots": 0,
+        "total_measurements": 0,
+        "total_alerts": 0,
+        "healthy_lots": 0,
+        "alert_lots": 0,
+        "expired_lots": 0,
+    }
+
+    for country in COUNTRY_BACKENDS:
+        try:
+            lots = call_country_api(country, "lots")
+            measurements = call_country_api(country, "measurements")
+            alerts = call_country_api(country, "alerts")
+
+            stats = build_statistics(lots, measurements, alerts)
+
+            countries_data[country] = {
+                "status": "ok",
+                "statistics": stats
+            }
+
+            for key in totals:
+                totals[key] += stats[key]
+
+        except HTTPException as e:
+            countries_data[country] = {
+                "status": "unreachable",
+                "detail": e.detail
+            }
+
+    return {
+        "statistics": totals,
+        "countries": countries_data
     }

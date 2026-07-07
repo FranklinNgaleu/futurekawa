@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Coffee_Lot__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Coffee Lot</label>
+    <referenceTo>Coffee_Lot__c</referenceTo>
+    <relationshipLabel>Storage Alerts</relationshipLabel>
+    <relationshipName>Storage_Alerts</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

@@ -7,6 +7,12 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.pytest_cache/
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
 
 # Environment
 .env
@@ -14,6 +20,11 @@ venv/
 
 # Docker
 *.log
+
+# CI artifacts
+logs/
+reports/
+artifacts/
 
 # IDE
 .vscode/

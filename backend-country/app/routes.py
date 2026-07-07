@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
@@ -6,17 +7,9 @@ from app.database import get_db
 from app.models import Lot, Measurement
 from app.schemas import AlertResponse, LotCreate, LotResponse, MeasurementCreate, MeasurementResponse
 from app.models import Lot, Measurement, Alert
+from app.thresholds import get_country_thresholds, TEMP_TOLERANCE, HUMIDITY_TOLERANCE
 
 router = APIRouter()
-
-COUNTRY_THRESHOLDS = {
-    "Brésil": {"temperature": 29, "humidity": 55},
-    "Équateur": {"temperature": 31, "humidity": 60},
-    "Colombie": {"temperature": 26, "humidity": 80},
-}
-
-TEMP_TOLERANCE = 3
-HUMIDITY_TOLERANCE = 2
 
 
 def evaluate_lot_status(lot: Lot, measurement: Measurement | None = None) -> str:
@@ -24,7 +17,7 @@ def evaluate_lot_status(lot: Lot, measurement: Measurement | None = None) -> str
         return "périmé"
 
     if measurement:
-        thresholds = COUNTRY_THRESHOLDS.get(lot.country)
+        thresholds = get_country_thresholds(lot.country)
 
         if thresholds:
             temp_ok = abs(measurement.temperature - thresholds["temperature"]) <= TEMP_TOLERANCE
@@ -41,13 +34,22 @@ def health():
     return {"status": "healthy", "service": "backend-country"}
 
 
-@router.post("/lots", response_model=LotResponse)
+@router.post("/lots", response_model=LotResponse, status_code=201)
 def create_lot(lot: LotCreate, db: Session = Depends(get_db)):
     db_lot = Lot(**lot.model_dump())
     db_lot.status = evaluate_lot_status(db_lot)
 
     db.add(db_lot)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail=f"Un lot avec le code '{lot.lot_code}' existe déjà."
+        )
+
     db.refresh(db_lot)
 
     return db_lot
@@ -79,6 +81,9 @@ def create_measurement(measurement: MeasurementCreate, db: Session = Depends(get
 
     if data["timestamp"] is None:
         data["timestamp"] = datetime.utcnow()
+
+    data["country"] = lot.country
+    data["warehouse"] = lot.warehouse
 
     db_measurement = Measurement(**data)
 
