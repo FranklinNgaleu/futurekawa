@@ -5,3 +5,5 @@ sqlalchemy
 python-dotenv
 selenium
 webdriver-manager
+fastapi
+paho-mqtt

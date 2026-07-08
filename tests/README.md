@@ -30,7 +30,7 @@ la couverture de code (`--cov`) est pleinement représentative du code
 applicatif.
 
 ```bash
-pip install -r backend-country/requirements.txt -r tests/requirements.txt
+pip install -r tests/requirements.txt
 pytest tests/unit -v
 ```
 

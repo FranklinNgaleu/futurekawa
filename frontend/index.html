@@ -452,6 +452,15 @@ function formatDateTime(value) {
   return d.toLocaleString('fr-FR');
 }
 
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 let currentLots = [];
 let farmFilter = '';
 
@@ -461,7 +470,7 @@ function populateFarmFilterOptions(lots) {
   const previousValue = select.value;
 
   select.innerHTML = '<option value="">Toutes les exploitations</option>' +
-    farms.map(farm => `<option value="${farm}">${farm}</option>`).join('');
+    farms.map(farm => `<option value="${escapeHtml(farm)}">${escapeHtml(farm)}</option>`).join('');
 
   select.value = farms.includes(previousValue) ? previousValue : '';
   farmFilter = select.value;
@@ -483,11 +492,11 @@ function renderLotsTable(lots) {
     tr.className = 'lot-row';
     tr.dataset.lotId = lot.id;
     tr.innerHTML = `
-      <td>${lot.lot_code}</td>
-      <td>${lot.farm}</td>
-      <td>${lot.warehouse}</td>
+      <td>${escapeHtml(lot.lot_code)}</td>
+      <td>${escapeHtml(lot.farm)}</td>
+      <td>${escapeHtml(lot.warehouse)}</td>
       <td>${formatDate(lot.storage_date)}</td>
-      <td><span class="status status-${statusClass(lot.status)}">${lot.status}</span></td>
+      <td><span class="status status-${statusClass(lot.status)}">${escapeHtml(lot.status)}</span></td>
     `;
     tr.addEventListener('click', () => openLotDetail(lot.id));
     tbody.appendChild(tr);
@@ -537,10 +546,10 @@ async function openLotDetail(lotId) {
     : '';
 
   document.getElementById('lot-detail-info').innerHTML = `
-    <p class="info-line"><strong>Exploitation :</strong>${lot.farm}</p>
-    <p class="info-line"><strong>Entrepôt :</strong>${lot.warehouse}</p>
+    <p class="info-line"><strong>Exploitation :</strong>${escapeHtml(lot.farm)}</p>
+    <p class="info-line"><strong>Entrepôt :</strong>${escapeHtml(lot.warehouse)}</p>
     <p class="info-line"><strong>Date de stockage :</strong>${formatDate(lot.storage_date)}</p>
-    <p class="info-line"><strong>Statut :</strong><span class="status status-${statusClass(lot.status)}">${lot.status}</span></p>
+    <p class="info-line"><strong>Statut :</strong><span class="status status-${statusClass(lot.status)}">${escapeHtml(lot.status)}</span></p>
     ${shippedLine}
   `;
 
@@ -600,9 +609,9 @@ async function loadAlerts() {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${formatDateTime(alert.timestamp)}</td>
-        <td>${alert.type}</td>
-        <td>${alert.warehouse}</td>
-        <td>${alert.message}</td>
+        <td>${escapeHtml(alert.type)}</td>
+        <td>${escapeHtml(alert.warehouse)}</td>
+        <td>${escapeHtml(alert.message)}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -635,7 +644,7 @@ async function loadGlobalDashboard() {
         tr.innerHTML = `
           <td>${label}</td>
           <td><span class="status status-expired">injoignable</span></td>
-          <td colspan="5" class="empty-state">${entry.detail || ''}</td>
+          <td colspan="5" class="empty-state">${escapeHtml(entry.detail || '')}</td>
         `;
       } else {
         tr.innerHTML = `

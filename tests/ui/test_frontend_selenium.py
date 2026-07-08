@@ -194,3 +194,30 @@ def test_create_lot_via_form_appears_in_list(driver):
 
     table_text = driver.find_element(By.ID, "lots-tbody").text
     assert lot_code in table_text
+
+
+def test_farm_field_is_html_escaped_not_executed(driver):
+    driver.get(FRONTEND_URL)
+    nav = wait_present(driver, (By.CSS_SELECTOR, ".nav-link[data-view='new-lot']"))
+    nav.click()
+    wait_visible(driver, (By.CSS_SELECTOR, "#view-new-lot.active"))
+
+    lot_code = f"LOT-XSS-{int(time.time())}"
+    payload = "<b>XSS</b>"
+    driver.find_element(By.NAME, "lot_code").send_keys(lot_code)
+    driver.find_element(By.NAME, "farm").send_keys(payload)
+    set_date_value(driver, driver.find_element(By.NAME, "storage_date"), "2025-01-01")
+    driver.find_element(By.CSS_SELECTOR, "#new-lot-form button[type='submit']").click()
+
+    wait_visible(driver, (By.CSS_SELECTOR, "#view-lots.active"), timeout=10)
+    row = WebDriverWait(driver, 10).until(
+        lambda d: next(
+            (r for r in d.find_elements(By.CSS_SELECTOR, "#lots-tbody tr.lot-row")
+             if lot_code in r.find_elements(By.TAG_NAME, "td")[0].text),
+            False,
+        )
+    )
+
+    farm_cell = row.find_elements(By.TAG_NAME, "td")[1]
+    assert farm_cell.find_elements(By.TAG_NAME, "b") == []
+    assert payload in farm_cell.text
