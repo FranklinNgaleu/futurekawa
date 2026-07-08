@@ -371,6 +371,14 @@ function showView(name) {
   navLinks.forEach(l => l.classList.toggle('active', l.dataset.view === name));
 }
 
+const COUNTRY_THRESHOLDS = {
+  bresil: { temperature: 29, humidity: 55 },
+  equateur: { temperature: 31, humidity: 60 },
+  colombie: { temperature: 26, humidity: 80 },
+};
+const TEMP_TOLERANCE = 3;
+const HUMIDITY_TOLERANCE = 2;
+
 const COUNTRY_LABELS = {
   equateur: 'Équateur',
   bresil: 'Brésil',
@@ -554,8 +562,15 @@ async function openLotDetail(lotId) {
   `;
 
   const shipBtn = document.getElementById('ship-lot-btn');
-  shipBtn.disabled = Boolean(lot.shipped_at);
-  shipBtn.textContent = lot.shipped_at ? 'Lot déjà expédié' : 'Expédier ce lot';
+  shipBtn.disabled = Boolean(lot.shipped_at) || lot.status !== 'conforme';
+
+  if (lot.shipped_at) {
+    shipBtn.textContent = 'Lot déjà expédié';
+  } else if (lot.status !== 'conforme') {
+    shipBtn.textContent = `Non expédiable (${lot.status})`;
+  } else {
+    shipBtn.textContent = 'Expédier ce lot';
+  }
 
   const shipMessageEl = document.getElementById('ship-lot-message');
   shipMessageEl.textContent = '';
@@ -565,6 +580,12 @@ async function openLotDetail(lotId) {
   const temperatures = measurements.map(m => m.temperature);
   const humidities = measurements.map(m => m.humidity);
 
+  const thresholds = COUNTRY_THRESHOLDS[lot.country] || COUNTRY_THRESHOLDS.equateur;
+  const tempMin = thresholds.temperature - TEMP_TOLERANCE;
+  const tempMax = thresholds.temperature + TEMP_TOLERANCE;
+  const humidityMin = thresholds.humidity - HUMIDITY_TOLERANCE;
+  const humidityMax = thresholds.humidity + HUMIDITY_TOLERANCE;
+
   if (tempChart) tempChart.destroy();
   if (humidityChart) humidityChart.destroy();
 
@@ -572,7 +593,11 @@ async function openLotDetail(lotId) {
     type: 'line',
     data: {
       labels,
-      datasets: [{ label: 'Température (°C)', data: temperatures, borderColor: '#b8860b', tension: 0.2 }]
+      datasets: [
+        { label: 'Température (°C)', data: temperatures, borderColor: '#b8860b', tension: 0.2 },
+        { label: `Seuil max (${tempMax}°C)`, data: labels.map(() => tempMax), borderColor: '#c0392b', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5 },
+        { label: `Seuil min (${tempMin}°C)`, data: labels.map(() => tempMin), borderColor: '#c0392b', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5 },
+      ]
     },
     options: { responsive: true, maintainAspectRatio: false }
   });
@@ -581,7 +606,11 @@ async function openLotDetail(lotId) {
     type: 'line',
     data: {
       labels,
-      datasets: [{ label: 'Humidité (%)', data: humidities, borderColor: '#2e7d4f', tension: 0.2 }]
+      datasets: [
+        { label: 'Humidité (%)', data: humidities, borderColor: '#2e7d4f', tension: 0.2 },
+        { label: `Seuil max (${humidityMax}%)`, data: labels.map(() => humidityMax), borderColor: '#c0392b', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5 },
+        { label: `Seuil min (${humidityMin}%)`, data: labels.map(() => humidityMin), borderColor: '#c0392b', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5 },
+      ]
     },
     options: { responsive: true, maintainAspectRatio: false }
   });
