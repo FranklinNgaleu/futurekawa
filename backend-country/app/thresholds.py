@@ -11,6 +11,12 @@ HUMIDITY_TOLERANCE = 2
 
 DEFAULT_COUNTRY = "equateur"
 
+COUNTRY_CODE_PREFIXES = {
+    "equateur": "EQ",
+    "bresil": "BR",
+    "colombie": "CO",
+}
+
 ACCENT_MAP = str.maketrans("éèêà", "eeea")
 
 
@@ -24,3 +30,15 @@ def get_country_thresholds(country: str):
 
 def get_own_country() -> str:
     return normalize_country(os.getenv("COUNTRY", DEFAULT_COUNTRY))
+
+
+def get_country_code_prefix(country: str) -> str:
+    normalized = normalize_country(country)
+    return COUNTRY_CODE_PREFIXES.get(normalized, COUNTRY_CODE_PREFIXES[DEFAULT_COUNTRY])
+
+
+def build_country_lot_code(country: str, suffix: str | int) -> str:
+    prefix = get_country_code_prefix(country)
+    if isinstance(suffix, int):
+        suffix = f"{suffix:03d}"
+    return f"LOT-{prefix}-{suffix}"
