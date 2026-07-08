@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models import Lot, Measurement
 from app.schemas import AlertResponse, LotCreate, LotResponse, MeasurementCreate, MeasurementResponse
 from app.models import Lot, Measurement, Alert
-from app.thresholds import get_country_thresholds, TEMP_TOLERANCE, HUMIDITY_TOLERANCE
+from app.thresholds import get_country_thresholds, get_own_country, TEMP_TOLERANCE, HUMIDITY_TOLERANCE
 
 router = APIRouter()
 
@@ -36,7 +36,10 @@ def health():
 
 @router.post("/lots", response_model=LotResponse, status_code=201)
 def create_lot(lot: LotCreate, db: Session = Depends(get_db)):
-    db_lot = Lot(**lot.model_dump())
+    data = lot.model_dump()
+    data["country"] = get_own_country()
+
+    db_lot = Lot(**data)
     db_lot.status = evaluate_lot_status(db_lot)
 
     db.add(db_lot)

@@ -1,11 +1,8 @@
-import os
 from datetime import datetime, timedelta
 
 from app.database import SessionLocal
 from app.models import FallbackReading, Lot
-from app.thresholds import COUNTRY_THRESHOLDS, normalize_country
-
-DEFAULT_COUNTRY = "equateur"
+from app.thresholds import COUNTRY_THRESHOLDS, DEFAULT_COUNTRY, get_own_country
 
 # (lot suffix, farm, warehouse) per warehouse, in seeding order
 COUNTRY_SEED_DATA = {
@@ -36,12 +33,8 @@ COUNTRY_SEED_DATA = {
 LOT_AGE_DAYS = [920, 750, 500, 300, 170, 20]
 
 
-def get_active_country():
-    return normalize_country(os.getenv("COUNTRY", DEFAULT_COUNTRY))
-
-
 def seed_database():
-    country = get_active_country()
+    country = get_own_country()
     seed_config = COUNTRY_SEED_DATA.get(country, COUNTRY_SEED_DATA[DEFAULT_COUNTRY])
 
     db = SessionLocal()
@@ -79,7 +72,7 @@ def seed_database():
 
 
 def seed_fallback_readings():
-    country = get_active_country()
+    country = get_own_country()
     seed_config = COUNTRY_SEED_DATA.get(country, COUNTRY_SEED_DATA[DEFAULT_COUNTRY])
     thresholds = COUNTRY_THRESHOLDS.get(country)
 

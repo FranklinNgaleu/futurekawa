@@ -1,4 +1,6 @@
 import os
+import uuid
+from datetime import datetime
 
 import pytest
 import requests
@@ -38,6 +40,32 @@ def test_each_country_backend_has_seeded_lots_for_its_own_country(country):
     prefix = COUNTRY_CODE_PREFIXES[country]
     seeded_codes = {lot["lot_code"] for lot in lots if lot["lot_code"].startswith(prefix)}
     assert len(seeded_codes) >= 6
+
+
+@pytest.mark.parametrize(
+    "own_country,spoofed_country",
+    [
+        ("equateur", "colombie"),
+        ("bresil", "equateur"),
+        ("colombie", "bresil"),
+    ],
+)
+def test_country_field_is_ignored_and_forced_server_side(own_country, spoofed_country):
+    payload = {
+        "lot_code": f"LOT-SPOOF-{uuid.uuid4().hex[:10]}",
+        "country": spoofed_country,
+        "farm": "Ferme Test",
+        "warehouse": "WH-TEST-01",
+        "storage_date": datetime.utcnow().isoformat(),
+    }
+
+    response = requests.post(f"{COUNTRY_PORTS[own_country]}/lots", json=payload, timeout=5)
+    assert response.status_code == 201
+    assert response.json()["country"] == own_country
+
+    lot_id = response.json()["id"]
+    stored = requests.get(f"{COUNTRY_PORTS[own_country]}/lots/{lot_id}", timeout=5)
+    assert stored.json()["country"] == own_country
 
 
 def test_countries_do_not_share_data():
