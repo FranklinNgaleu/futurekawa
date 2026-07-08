@@ -12,6 +12,7 @@ class LotCreate(BaseModel):
 class LotResponse(LotCreate):
     id: int
     status: str
+    shipped_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

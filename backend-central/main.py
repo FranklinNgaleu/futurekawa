@@ -114,12 +114,11 @@ def get_lots(country: str = DEFAULT_COUNTRY):
     }
 
 
-@app.post("/lots", status_code=201)
-def create_lot(payload: dict = Body(...), country: str = DEFAULT_COUNTRY):
+def relay_post(country: str, endpoint: str, payload: dict = None):
     base_url = get_backend_url(country)
 
     try:
-        response = requests.post(f"{base_url}/lots", json=payload, timeout=5)
+        response = requests.post(f"{base_url}/{endpoint}", json=payload, timeout=5)
     except requests.RequestException as e:
         raise HTTPException(
             status_code=503,
@@ -137,12 +136,22 @@ def create_lot(payload: dict = Body(...), country: str = DEFAULT_COUNTRY):
     return response.json()
 
 
+@app.post("/lots", status_code=201)
+def create_lot(payload: dict = Body(...), country: str = DEFAULT_COUNTRY):
+    return relay_post(country, "lots", payload)
+
+
 @app.get("/lots/{lot_id}")
 def get_lot_detail(lot_id: int, country: str = DEFAULT_COUNTRY):
     return {
         "country": country,
         "lot": call_country_api(country, f"lots/{lot_id}")
     }
+
+
+@app.post("/lots/{lot_id}/ship")
+def ship_lot(lot_id: int, country: str = DEFAULT_COUNTRY):
+    return relay_post(country, f"lots/{lot_id}/ship")
 
 
 @app.get("/lots/{lot_id}/measurements")

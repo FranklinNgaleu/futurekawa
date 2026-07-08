@@ -64,8 +64,13 @@ def create_lot(lot: LotCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/lots", response_model=list[LotResponse])
-def get_lots(db: Session = Depends(get_db)):
-    return db.query(Lot).order_by(Lot.storage_date.asc()).all()
+def get_lots(include_shipped: bool = Query(False), db: Session = Depends(get_db)):
+    query = db.query(Lot)
+
+    if not include_shipped:
+        query = query.filter(Lot.shipped_at.is_(None))
+
+    return query.order_by(Lot.storage_date.asc()).all()
 
 
 @router.get("/lots/{lot_id}", response_model=LotResponse)
@@ -74,6 +79,76 @@ def get_lot(lot_id: int, db: Session = Depends(get_db)):
 
     if not lot:
         raise HTTPException(status_code=404, detail="Lot introuvable")
+
+    return lot
+
+
+def find_blocking_lot(db: Session, lot: Lot):
+    return (
+        db.query(Lot)
+        .filter(
+            Lot.warehouse == lot.warehouse,
+            Lot.country == lot.country,
+            Lot.id != lot.id,
+            Lot.shipped_at.is_(None),
+            Lot.status != "périmé",
+            Lot.storage_date < lot.storage_date,
+        )
+        .order_by(Lot.storage_date.asc())
+        .first()
+    )
+
+
+@router.post("/lots/{lot_id}/ship", response_model=LotResponse)
+def ship_lot(lot_id: int, db: Session = Depends(get_db)):
+    lot = db.query(Lot).filter(Lot.id == lot_id).first()
+
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+
+    if lot.shipped_at is not None:
+        raise HTTPException(status_code=409, detail="Ce lot a déjà été expédié.")
+
+    blocking_lot = find_blocking_lot(db, lot)
+
+    if blocking_lot:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Impossible d'expédier ce lot : le lot '{blocking_lot.lot_code}' est plus "
+                f"ancien et doit être expédié en priorité (FIFO)."
+            ),
+        )
+
+    lot.shipped_at = datetime.utcnow()
+    db.commit()
+    db.refresh(lot)
+
+    return lot
+
+
+@router.post("/shipments/next", response_model=LotResponse)
+def ship_next_lot(warehouse: str, db: Session = Depends(get_db)):
+    lot = (
+        db.query(Lot)
+        .filter(
+            Lot.warehouse == warehouse,
+            Lot.shipped_at.is_(None),
+            Lot.status != "périmé",
+        )
+        .order_by(Lot.storage_date.asc())
+        .first()
+    )
+
+    if not lot:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Aucun lot à expédier dans l'entrepôt '{warehouse}'.",
+        )
+
+    lot.shipped_at = datetime.utcnow()
+    db.commit()
+    db.refresh(lot)
 
     return lot
 

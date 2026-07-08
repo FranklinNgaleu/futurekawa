@@ -13,6 +13,7 @@ class Lot(Base):
     warehouse = Column(String, nullable=False)
     storage_date = Column(DateTime, nullable=False)
     status = Column(String, default="conforme")
+    shipped_at = Column(DateTime, nullable=True)
 
     measurements = relationship("Measurement", back_populates="lot")
 

@@ -210,7 +210,11 @@
     <section id="view-lot-detail" class="view">
       <button class="btn b" id="back-to-lots" type="button">&larr; Retour aux lots</button>
       <h2 id="lot-detail-title">Détail du lot</h2>
-      <div class="card" id="lot-detail-info"></div>
+      <div class="card">
+        <div id="lot-detail-info"></div>
+        <button class="btn" id="ship-lot-btn" type="button">Expédier ce lot</button>
+        <div id="ship-lot-message"></div>
+      </div>
       <div class="card">
         <h3>Température</h3>
         <div class="chart-wrap"><canvas id="chart-temperature"></canvas></div>
@@ -404,7 +408,11 @@ async function loadLots() {
   }
 }
 
+let currentLotId = null;
+
 async function openLotDetail(lotId) {
+  currentLotId = lotId;
+
   const [lotRes, measRes] = await Promise.all([
     fetch(`${API_BASE}/lots/${lotId}?country=${activeCountry}`),
     fetch(`${API_BASE}/lots/${lotId}/measurements?country=${activeCountry}`)
@@ -416,12 +424,26 @@ async function openLotDetail(lotId) {
   const measurements = measData.measurements || [];
 
   document.getElementById('lot-detail-title').textContent = `Lot ${lot.lot_code}`;
+
+  const shippedLine = lot.shipped_at
+    ? `<p class="info-line"><strong>Expédié le :</strong>${formatDateTime(lot.shipped_at)}</p>`
+    : '';
+
   document.getElementById('lot-detail-info').innerHTML = `
     <p class="info-line"><strong>Exploitation :</strong>${lot.farm}</p>
     <p class="info-line"><strong>Entrepôt :</strong>${lot.warehouse}</p>
     <p class="info-line"><strong>Date de stockage :</strong>${formatDate(lot.storage_date)}</p>
     <p class="info-line"><strong>Statut :</strong><span class="status status-${statusClass(lot.status)}">${lot.status}</span></p>
+    ${shippedLine}
   `;
+
+  const shipBtn = document.getElementById('ship-lot-btn');
+  shipBtn.disabled = Boolean(lot.shipped_at);
+  shipBtn.textContent = lot.shipped_at ? 'Lot déjà expédié' : 'Expédier ce lot';
+
+  const shipMessageEl = document.getElementById('ship-lot-message');
+  shipMessageEl.textContent = '';
+  shipMessageEl.className = '';
 
   const labels = measurements.map(m => formatDateTime(m.timestamp));
   const temperatures = measurements.map(m => m.temperature);
@@ -551,6 +573,34 @@ navLinks.forEach(link => {
 document.getElementById('back-to-lots').addEventListener('click', () => {
   showView('lots');
   loadLots();
+});
+
+document.getElementById('ship-lot-btn').addEventListener('click', async () => {
+  if (!currentLotId) return;
+
+  const messageEl = document.getElementById('ship-lot-message');
+  messageEl.textContent = '';
+  messageEl.className = '';
+
+  try {
+    const res = await fetch(`${API_BASE}/lots/${currentLotId}/ship?country=${activeCountry}`, {
+      method: 'POST'
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      messageEl.textContent = err.detail || "Erreur lors de l'expédition du lot.";
+      messageEl.className = 'message error';
+      return;
+    }
+
+    messageEl.textContent = 'Lot expédié avec succès.';
+    messageEl.className = 'message success';
+    openLotDetail(currentLotId);
+  } catch (err) {
+    messageEl.textContent = 'Erreur réseau : impossible de contacter le serveur.';
+    messageEl.className = 'message error';
+  }
 });
 
 loadCountries();

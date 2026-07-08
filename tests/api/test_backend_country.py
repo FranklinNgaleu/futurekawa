@@ -130,6 +130,62 @@ def test_measurements_pagination_limit_is_capped():
     assert response.status_code == 422
 
 
+def test_shipping_the_oldest_lot_succeeds():
+    warehouse = f"WH-SHIP-{uuid.uuid4().hex[:6]}"
+    now = datetime.utcnow()
+
+    oldest, _ = create_lot(warehouse=warehouse, storage_date=(now - timedelta(days=10)).isoformat())
+    lot_id = oldest.json()["id"]
+
+    response = requests.post(f"{BASE_URL}/lots/{lot_id}/ship", timeout=5)
+
+    assert response.status_code == 200
+    assert response.json()["shipped_at"] is not None
+
+
+def test_shipping_a_newer_lot_is_refused_when_an_older_one_remains():
+    warehouse = f"WH-SHIP-{uuid.uuid4().hex[:6]}"
+    now = datetime.utcnow()
+
+    create_lot(warehouse=warehouse, storage_date=(now - timedelta(days=10)).isoformat())
+    newer, _ = create_lot(warehouse=warehouse, storage_date=(now - timedelta(days=1)).isoformat())
+    newer_id = newer.json()["id"]
+
+    response = requests.post(f"{BASE_URL}/lots/{newer_id}/ship", timeout=5)
+
+    assert response.status_code == 409
+    assert "detail" in response.json()
+
+
+def test_shipped_lots_are_excluded_from_default_lot_list():
+    warehouse = f"WH-SHIP-{uuid.uuid4().hex[:6]}"
+
+    created, _ = create_lot(warehouse=warehouse)
+    lot_id = created.json()["id"]
+    lot_code = created.json()["lot_code"]
+
+    requests.post(f"{BASE_URL}/lots/{lot_id}/ship", timeout=5)
+
+    default_lots = requests.get(f"{BASE_URL}/lots", timeout=5).json()
+    assert lot_code not in {lot["lot_code"] for lot in default_lots}
+
+    all_lots = requests.get(f"{BASE_URL}/lots", params={"include_shipped": True}, timeout=5).json()
+    assert lot_code in {lot["lot_code"] for lot in all_lots}
+
+
+def test_ship_next_ships_the_oldest_lot_in_the_warehouse():
+    warehouse = f"WH-SHIP-{uuid.uuid4().hex[:6]}"
+    now = datetime.utcnow()
+
+    oldest, _ = create_lot(warehouse=warehouse, storage_date=(now - timedelta(days=10)).isoformat())
+    create_lot(warehouse=warehouse, storage_date=(now - timedelta(days=1)).isoformat())
+
+    response = requests.post(f"{BASE_URL}/shipments/next", params={"warehouse": warehouse}, timeout=5)
+
+    assert response.status_code == 200
+    assert response.json()["id"] == oldest.json()["id"]
+
+
 def test_lots_sorted_by_storage_date_ascending_fifo():
     now = datetime.utcnow()
     create_lot(storage_date=(now - timedelta(days=100)).isoformat())
