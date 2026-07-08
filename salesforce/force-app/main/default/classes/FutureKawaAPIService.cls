@@ -1,33 +1,42 @@
 public class FutureKawaAPIService {
 
+    private static final List<String> COUNTRIES = new List<String>{ 'bresil', 'equateur', 'colombie' };
+
     public static void syncAll() {
         syncLots();
         syncAlerts();
     }
 
     public static void syncLots() {
-        HttpResponse response = performCallout('/lots');
-        if (response == null || response.getStatusCode() != 200) {
-            return;
-        }
-
-        List<Object> payload = (List<Object>) JSON.deserializeUntyped(response.getBody());
         List<Coffee_Lot__c> lotsToUpsert = new List<Coffee_Lot__c>();
 
-        for (Object item : payload) {
-            Map<String, Object> lot = (Map<String, Object>) item;
-            Coffee_Lot__c record = new Coffee_Lot__c();
-            record.Lot_Code__c = (String) lot.get('lot_code');
-            record.Country__c = normalizeCountry((String) lot.get('country'));
-            record.Warehouse__c = (String) lot.get('warehouse');
-            record.Status__c = normalizeStatus((String) lot.get('status'));
-
-            Object storageDate = lot.get('storage_date');
-            if (storageDate != null) {
-                record.Storage_Date__c = parseDate((String) storageDate);
+        for (String country : COUNTRIES) {
+            HttpResponse response = performCallout('/lots', country);
+            if (response == null || response.getStatusCode() != 200) {
+                continue;
             }
 
-            lotsToUpsert.add(record);
+            Map<String, Object> payload = (Map<String, Object>) JSON.deserializeUntyped(response.getBody());
+            List<Object> lots = (List<Object>) payload.get('lots');
+            if (lots == null) {
+                continue;
+            }
+
+            for (Object item : lots) {
+                Map<String, Object> lot = (Map<String, Object>) item;
+                Coffee_Lot__c record = new Coffee_Lot__c();
+                record.Lot_Code__c = (String) lot.get('lot_code');
+                record.Country__c = normalizeCountry((String) lot.get('country'));
+                record.Warehouse__c = (String) lot.get('warehouse');
+                record.Status__c = normalizeStatus((String) lot.get('status'));
+
+                Object storageDate = lot.get('storage_date');
+                if (storageDate != null) {
+                    record.Storage_Date__c = parseDate((String) storageDate);
+                }
+
+                lotsToUpsert.add(record);
+            }
         }
 
         if (!lotsToUpsert.isEmpty()) {
@@ -37,16 +46,27 @@ public class FutureKawaAPIService {
     }
 
     public static void syncAlerts() {
-        HttpResponse response = performCallout('/alerts');
-        if (response == null || response.getStatusCode() != 200) {
-            return;
+        List<Map<String, Object>> allAlerts = new List<Map<String, Object>>();
+
+        for (String country : COUNTRIES) {
+            HttpResponse response = performCallout('/alerts', country);
+            if (response == null || response.getStatusCode() != 200) {
+                continue;
+            }
+
+            Map<String, Object> payload = (Map<String, Object>) JSON.deserializeUntyped(response.getBody());
+            List<Object> alerts = (List<Object>) payload.get('alerts');
+            if (alerts == null) {
+                continue;
+            }
+
+            for (Object item : alerts) {
+                allAlerts.add((Map<String, Object>) item);
+            }
         }
 
-        List<Object> payload = (List<Object>) JSON.deserializeUntyped(response.getBody());
         Set<String> lotCodes = new Set<String>();
-
-        for (Object item : payload) {
-            Map<String, Object> alert = (Map<String, Object>) item;
+        for (Map<String, Object> alert : allAlerts) {
             Object lotCode = alert.get('lot_code');
             if (lotCode != null) {
                 lotCodes.add((String) lotCode);
@@ -61,8 +81,7 @@ public class FutureKawaAPIService {
         }
 
         List<Storage_Alert__c> alertsToInsert = new List<Storage_Alert__c>();
-        for (Object item : payload) {
-            Map<String, Object> alert = (Map<String, Object>) item;
+        for (Map<String, Object> alert : allAlerts) {
             Storage_Alert__c record = new Storage_Alert__c();
             record.Alert_Type__c = (String) alert.get('type');
             record.Warehouse__c = (String) alert.get('warehouse');
@@ -98,10 +117,10 @@ public class FutureKawaAPIService {
         }
     }
 
-    private static HttpResponse performCallout(String path) {
+    private static HttpResponse performCallout(String path, String country) {
         try {
             HttpRequest request = new HttpRequest();
-            request.setEndpoint('callout:FutureKawa_API' + path);
+            request.setEndpoint('callout:FutureKawa_API' + path + '?country=' + EncodingUtil.urlEncode(country, 'UTF-8'));
             request.setMethod('GET');
             return new Http().send(request);
         } catch (Exception e) {

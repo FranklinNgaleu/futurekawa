@@ -7,22 +7,57 @@ private class FutureKawaAPIServiceTest {
             response.setStatusCode(200);
             response.setHeader('Content-Type', 'application/json');
 
-            if (request.getEndpoint().endsWith('/lots')) {
-                response.setBody('[' +
-                    '{"lot_code":"LOT-001","country":"bresil","warehouse":"WH-Santos","storage_date":"2026-01-15","status":"conforme"},' +
-                    '{"lot_code":"LOT-002","country":"equateur","warehouse":"WH-Guayaquil","storage_date":"2025-11-01","status":"périmé"}' +
-                ']');
-            } else if (request.getEndpoint().endsWith('/alerts')) {
-                response.setBody('[' +
-                    '{"type":"LOT_EXPIRED","message":"Lot expiré","value":0,"min":0,"max":0,"warehouse":"WH-Guayaquil","timestamp":"2026-01-20T08:00:00.000Z","country":"equateur","lot_code":"LOT-002"},' +
-                    '{"type":"TEMPERATURE_OUT_OF_RANGE","message":"Température hors plage","value":32.5,"min":2,"max":10,"warehouse":"WH-Santos","timestamp":"2026-01-20T09:00:00.000Z","country":"bresil"}' +
-                ']');
+            String endpoint = request.getEndpoint();
+            String country = extractCountry(endpoint);
+
+            if (endpoint.contains('/lots')) {
+                response.setBody(lotsBodyFor(country));
+            } else if (endpoint.contains('/alerts')) {
+                response.setBody(alertsBodyFor(country));
             } else {
                 response.setStatusCode(404);
                 response.setBody('{}');
             }
 
             return response;
+        }
+
+        private String extractCountry(String endpoint) {
+            Integer idx = endpoint.indexOf('country=');
+            if (idx < 0) {
+                return '';
+            }
+            String rest = endpoint.substring(idx + 'country='.length());
+            Integer ampIdx = rest.indexOf('&');
+            return ampIdx >= 0 ? rest.substring(0, ampIdx) : rest;
+        }
+
+        private String lotsBodyFor(String country) {
+            if (country == 'bresil') {
+                return '{"country":"bresil","lots":[' +
+                    '{"lot_code":"LOT-001","country":"bresil","warehouse":"WH-Santos","storage_date":"2026-01-15","status":"conforme"}' +
+                ']}';
+            }
+            if (country == 'equateur') {
+                return '{"country":"equateur","lots":[' +
+                    '{"lot_code":"LOT-002","country":"equateur","warehouse":"WH-Guayaquil","storage_date":"2025-11-01","status":"périmé"}' +
+                ']}';
+            }
+            return '{"country":"' + country + '","lots":[]}';
+        }
+
+        private String alertsBodyFor(String country) {
+            if (country == 'bresil') {
+                return '{"country":"bresil","alerts":[' +
+                    '{"type":"TEMPERATURE_OUT_OF_RANGE","message":"Température hors plage","value":32.5,"min":2,"max":10,"warehouse":"WH-Santos","timestamp":"2026-01-20T09:00:00.000Z","country":"bresil"}' +
+                ']}';
+            }
+            if (country == 'equateur') {
+                return '{"country":"equateur","alerts":[' +
+                    '{"type":"LOT_EXPIRED","message":"Lot expiré","value":0,"min":0,"max":0,"warehouse":"WH-Guayaquil","timestamp":"2026-01-20T08:00:00.000Z","country":"equateur","lot_code":"LOT-002"}' +
+                ']}';
+            }
+            return '{"country":"' + country + '","alerts":[]}';
         }
     }
 
@@ -95,5 +130,22 @@ private class FutureKawaAPIServiceTest {
 
         System.assertEquals(0, [SELECT COUNT() FROM Coffee_Lot__c]);
         System.assertEquals(0, [SELECT COUNT() FROM Storage_Alert__c]);
+    }
+
+    @isTest
+    static void testSyncLotsCoversAllThreeCountries() {
+        Test.setMock(HttpCalloutMock.class, new LotsAndAlertsMock());
+
+        Test.startTest();
+        FutureKawaAPIService.syncLots();
+        Test.stopTest();
+
+        Set<String> countries = new Set<String>();
+        for (Coffee_Lot__c lot : [SELECT Country__c FROM Coffee_Lot__c]) {
+            countries.add(lot.Country__c);
+        }
+
+        System.assert(countries.contains('Brésil'));
+        System.assert(countries.contains('Équateur'));
     }
 }
