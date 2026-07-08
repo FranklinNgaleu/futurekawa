@@ -76,7 +76,8 @@ chmod +x install.sh
 
 # 3. Configurer l'IP du broker MQTT
 nano config/config.py
-# → Modifier MQTT_BROKER_HOST avec l'IP du PC backend
+# → Modifier MQTT_HOST avec l'IP du broker Mosquitto dédié au pays du module
+# (ou définir les variables d'environnement MQTT_HOST / MQTT_PORT au lancement)
 ```
 
 ---

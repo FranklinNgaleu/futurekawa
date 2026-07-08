@@ -98,7 +98,7 @@ def on_connect(client, userdata, flags, rc):
     global mqtt_connected
     if rc == 0:
         mqtt_connected = True
-        logger.info(f"Connecté au broker MQTT ({MQTT_BROKER_HOST}:{MQTT_BROKER_PORT})")
+        logger.info(f"Connecté au broker MQTT ({MQTT_HOST}:{MQTT_PORT})")
         # Publier un message de statut à la connexion
         client.publish(
             MQTT_TOPIC_STATUS,
@@ -333,9 +333,9 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
 
     # Connexion MQTT (avec retry)
-    logger.info(f"Connexion au broker MQTT {MQTT_BROKER_HOST}:{MQTT_BROKER_PORT}...")
+    logger.info(f"Connexion au broker MQTT {MQTT_HOST}:{MQTT_PORT}...")
     try:
-        client.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_KEEPALIVE)
+        client.connect(MQTT_HOST, MQTT_PORT, MQTT_KEEPALIVE)
     except Exception as e:
         logger.error(f"Impossible de joindre le broker MQTT : {e}")
         logger.info("Le module continuera à tenter de se reconnecter...")

@@ -18,15 +18,35 @@ services:
       timeout: 5s
       retries: 10
 
-  mosquitto:
+  mosquitto-equateur:
     image: eclipse-mosquitto:2
-    container_name: futurekawa-mosquitto
+    container_name: futurekawa-mosquitto-equateur
     ports:
       - "1883:1883"
     volumes:
       - ./docker/mosquitto/config:/mosquitto/config
-      - mosquitto_data:/mosquitto/data
-      - mosquitto_log:/mosquitto/log
+      - mosquitto_equateur_data:/mosquitto/data
+      - mosquitto_equateur_log:/mosquitto/log
+
+  mosquitto-bresil:
+    image: eclipse-mosquitto:2
+    container_name: futurekawa-mosquitto-bresil
+    ports:
+      - "1884:1883"
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config
+      - mosquitto_bresil_data:/mosquitto/data
+      - mosquitto_bresil_log:/mosquitto/log
+
+  mosquitto-colombie:
+    image: eclipse-mosquitto:2
+    container_name: futurekawa-mosquitto-colombie
+    ports:
+      - "1885:1883"
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config
+      - mosquitto_colombie_data:/mosquitto/data
+      - mosquitto_colombie_log:/mosquitto/log
 
   backend-country-equateur:
     build: ./backend-country
@@ -37,7 +57,7 @@ services:
     environment:
       COUNTRY: equateur
       DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa_equateur
-      MQTT_HOST: mosquitto
+      MQTT_HOST: mosquitto-equateur
       MQTT_PORT: 1883
       MQTT_TOPIC_MEASURES: futurekawa/equateur/measures
       SMTP_HOST: ${SMTP_HOST}
@@ -55,7 +75,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      mosquitto:
+      mosquitto-equateur:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -73,7 +93,7 @@ services:
     environment:
       COUNTRY: bresil
       DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa_bresil
-      MQTT_HOST: mosquitto
+      MQTT_HOST: mosquitto-bresil
       MQTT_PORT: 1883
       MQTT_TOPIC_MEASURES: futurekawa/bresil/measures
       SMTP_HOST: ${SMTP_HOST}
@@ -91,7 +111,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      mosquitto:
+      mosquitto-bresil:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -109,7 +129,7 @@ services:
     environment:
       COUNTRY: colombie
       DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa_colombie
-      MQTT_HOST: mosquitto
+      MQTT_HOST: mosquitto-colombie
       MQTT_PORT: 1883
       MQTT_TOPIC_MEASURES: futurekawa/colombie/measures
       SMTP_HOST: ${SMTP_HOST}
@@ -127,7 +147,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      mosquitto:
+      mosquitto-colombie:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -171,5 +191,9 @@ services:
 
 volumes:
   postgres_data:
-  mosquitto_data:
-  mosquitto_log:
+  mosquitto_equateur_data:
+  mosquitto_equateur_log:
+  mosquitto_bresil_data:
+  mosquitto_bresil_log:
+  mosquitto_colombie_data:
+  mosquitto_colombie_log:

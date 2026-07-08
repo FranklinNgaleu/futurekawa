@@ -45,8 +45,10 @@ LED_RGB_G_PIN = 23   # GPIO23 → Pin 16 (LED RGB vert)
 LED_RGB_B_PIN = 24   # GPIO24 → Pin 18 (LED RGB bleu)
 
 # --- MQTT ---
-MQTT_BROKER_HOST = os.environ.get("MQTT_BROKER_HOST", "192.168.1.17")
-MQTT_BROKER_PORT = int(os.environ.get("MQTT_BROKER_PORT", "1883"))
+# Mêmes noms de variables que backend-country (MQTT_HOST / MQTT_PORT) :
+# chaque module IoT pointe vers le broker Mosquitto dédié à son propre pays.
+MQTT_HOST = os.environ.get("MQTT_HOST", "192.168.1.17")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 MQTT_USERNAME = os.environ.get("MQTT_USERNAME") or None
 MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD") or None
 MQTT_CLIENT_ID = f"futurekawa-iot-{COUNTRY}-{WAREHOUSE_ID}"

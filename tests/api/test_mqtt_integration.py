@@ -5,34 +5,36 @@ from datetime import datetime, timezone
 import requests
 import paho.mqtt.client as mqtt
 
+COUNTRY_BROKERS = {
+    "equateur": {"mqtt_port": 1883, "api_url": "http://localhost:8001", "warehouse": "WH-EQ-01"},
+    "bresil": {"mqtt_port": 1884, "api_url": "http://localhost:8002", "warehouse": "WH-BR-01"},
+}
+
 MQTT_HOST = "localhost"
-MQTT_PORT = 1883
-MQTT_TOPIC = "futurekawa/equateur/measures"
-
-COUNTRY_API_URL = "http://localhost:8001"
 
 
-def test_mqtt_measure_creates_expected_measurement_and_alerts():
+def publish_measurement_and_assert_alerts(country, temperature, humidity):
+    config = COUNTRY_BROKERS[country]
     timestamp = datetime.now(timezone.utc).isoformat()
 
     payload = {
-        "country": "equateur",
-        "warehouse": "WH-EQ-01",
+        "country": country,
+        "warehouse": config["warehouse"],
         "timestamp": timestamp,
-        "temperature": 25.0,
-        "humidity": 46.0,
+        "temperature": temperature,
+        "humidity": humidity,
         "status": "OK",
         "alerts": []
     }
 
     client = mqtt.Client()
-    client.connect(MQTT_HOST, MQTT_PORT, 60)
-    client.publish(MQTT_TOPIC, json.dumps(payload))
+    client.connect(MQTT_HOST, config["mqtt_port"], 60)
+    client.publish(f"futurekawa/{country}/measures", json.dumps(payload))
     client.disconnect()
 
     time.sleep(3)
 
-    measurements_response = requests.get(f"{COUNTRY_API_URL}/measurements", params={"limit": 500})
+    measurements_response = requests.get(f"{config['api_url']}/measurements", params={"limit": 500})
     assert measurements_response.status_code == 200
 
     measurements = measurements_response.json()
@@ -47,7 +49,7 @@ def test_mqtt_measure_creates_expected_measurement_and_alerts():
 
     assert len(matching_measurements) > 0
 
-    alerts_response = requests.get(f"{COUNTRY_API_URL}/alerts")
+    alerts_response = requests.get(f"{config['api_url']}/alerts")
     assert alerts_response.status_code == 200
 
     alerts = alerts_response.json()
@@ -58,7 +60,18 @@ def test_mqtt_measure_creates_expected_measurement_and_alerts():
         and a["timestamp"].startswith(timestamp[:19])
     ]
 
-    alert_types = [a["type"] for a in matching_alerts]
+    return [a["type"] for a in matching_alerts]
+
+
+def test_mqtt_measure_creates_expected_measurement_and_alerts():
+    alert_types = publish_measurement_and_assert_alerts("equateur", temperature=25.0, humidity=46.0)
 
     assert "TEMPERATURE_OUT_OF_RANGE" in alert_types
     assert "HUMIDITY_OUT_OF_RANGE" in alert_types
+
+
+def test_mqtt_measure_on_bresil_broker_creates_no_alert_when_within_range():
+    alert_types = publish_measurement_and_assert_alerts("bresil", temperature=29.0, humidity=55.0)
+
+    assert "TEMPERATURE_OUT_OF_RANGE" not in alert_types
+    assert "HUMIDITY_OUT_OF_RANGE" not in alert_types
