@@ -155,7 +155,10 @@ def test_farm_filter_filters_lots_table(driver):
 
 def test_ship_button_ships_oldest_lot(driver):
     driver.get(FRONTEND_URL)
-    row = wait_present(driver, (By.CSS_SELECTOR, "#lots-tbody tr.lot-row"))
+    wait_present(driver, (By.CSS_SELECTOR, "#lots-tbody tr.lot-row"))
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#lots-tbody tr.lot-row")
+    row = next(r for r in rows if "conforme" in r.find_elements(By.TAG_NAME, "td")[4].text.lower())
     shipped_lot_code = row.find_elements(By.TAG_NAME, "td")[0].text
     row.click()
 
@@ -175,6 +178,19 @@ def test_ship_button_ships_oldest_lot(driver):
     wait_present(driver, (By.CSS_SELECTOR, "#lots-tbody tr.lot-row"))
     table_text = driver.find_element(By.ID, "lots-tbody").text
     assert shipped_lot_code not in table_text
+
+
+def test_ship_button_disabled_for_non_conforme_lot(driver):
+    driver.get(FRONTEND_URL)
+    wait_present(driver, (By.CSS_SELECTOR, "#lots-tbody tr.lot-row"))
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#lots-tbody tr.lot-row")
+    row = next(r for r in rows if "conforme" not in r.find_elements(By.TAG_NAME, "td")[4].text.lower())
+    row.click()
+
+    wait_visible(driver, (By.CSS_SELECTOR, "#view-lot-detail.active"))
+    ship_button = driver.find_element(By.ID, "ship-lot-btn")
+    assert ship_button.get_attribute("disabled") is not None
 
 
 def test_create_lot_via_form_appears_in_list(driver):

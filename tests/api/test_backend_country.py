@@ -8,7 +8,7 @@ BASE_URL = os.getenv("BACKEND_COUNTRY_URL", "http://localhost:8001")
 
 
 def unique_lot_code():
-    return f"LOT-TEST-{uuid.uuid4().hex[:12]}"
+    return f"LOT-EQ-TEST-{uuid.uuid4().hex[:12]}"
 
 
 def make_lot_payload(**overrides):
@@ -152,6 +152,40 @@ def test_shipping_a_newer_lot_is_refused_when_an_older_one_remains():
     newer_id = newer.json()["id"]
 
     response = requests.post(f"{BASE_URL}/lots/{newer_id}/ship", timeout=5)
+
+    assert response.status_code == 409
+    assert "detail" in response.json()
+
+
+def test_shipping_a_perime_lot_is_refused():
+    warehouse = f"WH-SHIP-{uuid.uuid4().hex[:6]}"
+    now = datetime.utcnow()
+
+    perime, _ = create_lot(warehouse=warehouse, storage_date=(now - timedelta(days=900)).isoformat())
+    lot_id = perime.json()["id"]
+    assert perime.json()["status"] == "périmé"
+
+    response = requests.post(f"{BASE_URL}/lots/{lot_id}/ship", timeout=5)
+
+    assert response.status_code == 409
+    assert "detail" in response.json()
+
+
+def test_shipping_a_lot_en_alerte_is_refused():
+    warehouse = f"WH-SHIP-{uuid.uuid4().hex[:6]}"
+
+    created, _ = create_lot(warehouse=warehouse)
+    lot_id = created.json()["id"]
+
+    requests.post(
+        f"{BASE_URL}/measurements",
+        json={"lot_id": lot_id, "temperature": 99.0, "humidity": 99.0},
+        timeout=5,
+    )
+    lot_after_alert = requests.get(f"{BASE_URL}/lots/{lot_id}", timeout=5).json()
+    assert lot_after_alert["status"] == "en alerte"
+
+    response = requests.post(f"{BASE_URL}/lots/{lot_id}/ship", timeout=5)
 
     assert response.status_code == 409
     assert "detail" in response.json()

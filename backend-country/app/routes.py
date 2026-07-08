@@ -8,7 +8,14 @@ from app.email_service import send_grouped_alert_email
 from app.models import Alert, Lot, Measurement
 from app.mqtt_subscriber import apply_measurement
 from app.schemas import AlertResponse, LotCreate, LotResponse, MeasurementCreate, MeasurementResponse
-from app.thresholds import get_country_thresholds, get_own_country, TEMP_TOLERANCE, HUMIDITY_TOLERANCE
+from app.thresholds import (
+    build_country_lot_code,
+    get_country_thresholds,
+    get_country_code_prefix,
+    get_own_country,
+    TEMP_TOLERANCE,
+    HUMIDITY_TOLERANCE,
+)
 
 router = APIRouter()
 
@@ -41,7 +48,16 @@ def health():
 @router.post("/lots", response_model=LotResponse, status_code=201)
 def create_lot(lot: LotCreate, db: Session = Depends(get_db)):
     data = lot.model_dump()
-    data["country"] = get_own_country()
+    country = get_own_country()
+    data["country"] = country
+
+    if not data.get("lot_code"):
+        data["lot_code"] = build_country_lot_code(country, 1)
+    else:
+        requested_code = str(data["lot_code"]).strip()
+        prefix = get_country_code_prefix(country)
+        if not requested_code.startswith(f"LOT-{prefix}-"):
+            data["lot_code"] = build_country_lot_code(country, requested_code)
 
     db_lot = Lot(**data)
     db_lot.status = evaluate_lot_status(db_lot)
@@ -108,6 +124,15 @@ def ship_lot(lot_id: int, db: Session = Depends(get_db)):
     if lot.shipped_at is not None:
         raise HTTPException(status_code=409, detail="Ce lot a déjà été expédié.")
 
+    if lot.status != "conforme":
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Impossible d'expédier ce lot : statut actuel '{lot.status}' "
+                f"(seuls les lots conformes sont expédiables)."
+            ),
+        )
+
     blocking_lot = find_blocking_lot(db, lot)
 
     if blocking_lot:
@@ -133,7 +158,7 @@ def ship_next_lot(warehouse: str, db: Session = Depends(get_db)):
         .filter(
             Lot.warehouse == warehouse,
             Lot.shipped_at.is_(None),
-            Lot.status != "périmé",
+            Lot.status == "conforme",
         )
         .order_by(Lot.storage_date.asc())
         .first()
