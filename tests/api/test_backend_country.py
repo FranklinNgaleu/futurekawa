@@ -96,6 +96,40 @@ def test_lot_measurements_sorted_chronologically():
     assert timestamps == sorted(timestamps)
 
 
+def test_lot_measurements_pagination():
+    response, _ = create_lot(warehouse=f"WH-PAGINATION-{uuid.uuid4().hex[:6]}")
+    lot_id = response.json()["id"]
+
+    base = datetime.utcnow()
+    for i in range(5):
+        requests.post(
+            f"{BASE_URL}/measurements",
+            json={
+                "lot_id": lot_id,
+                "temperature": 31.0,
+                "humidity": 60.0,
+                "timestamp": (base + timedelta(minutes=i)).isoformat(),
+            },
+            timeout=5,
+        )
+
+    first_page = requests.get(
+        f"{BASE_URL}/lots/{lot_id}/measurements", params={"limit": 2, "offset": 0}, timeout=5
+    ).json()
+    second_page = requests.get(
+        f"{BASE_URL}/lots/{lot_id}/measurements", params={"limit": 2, "offset": 2}, timeout=5
+    ).json()
+
+    assert len(first_page) == 2
+    assert len(second_page) == 2
+    assert {m["id"] for m in first_page}.isdisjoint({m["id"] for m in second_page})
+
+
+def test_measurements_pagination_limit_is_capped():
+    response = requests.get(f"{BASE_URL}/measurements", params={"limit": 10000}, timeout=5)
+    assert response.status_code == 422
+
+
 def test_lots_sorted_by_storage_date_ascending_fifo():
     now = datetime.utcnow()
     create_lot(storage_date=(now - timedelta(days=100)).isoformat())

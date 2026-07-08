@@ -5,6 +5,7 @@ import requests
 from fastapi import Body, FastAPI, HTTPException
 
 DEFAULT_COUNTRY = "equateur"
+MAX_PAGE_LIMIT = 500
 
 COUNTRY_DISPLAY_NAMES = {
     "bresil": "Brésil",
@@ -55,11 +56,11 @@ def get_backend_url(country: str) -> str:
     return url
 
 
-def call_country_api(country: str, endpoint: str):
+def call_country_api(country: str, endpoint: str, params: dict = None):
     base_url = get_backend_url(country)
 
     try:
-        response = requests.get(f"{base_url}/{endpoint}", timeout=5)
+        response = requests.get(f"{base_url}/{endpoint}", params=params, timeout=5)
         response.raise_for_status()
         return response.json()
 
@@ -145,11 +146,13 @@ def get_lot_detail(lot_id: int, country: str = DEFAULT_COUNTRY):
 
 
 @app.get("/lots/{lot_id}/measurements")
-def get_lot_measurements(lot_id: int, country: str = DEFAULT_COUNTRY):
+def get_lot_measurements(lot_id: int, country: str = DEFAULT_COUNTRY, limit: int = 100, offset: int = 0):
     return {
         "country": country,
         "lot_id": lot_id,
-        "measurements": call_country_api(country, f"lots/{lot_id}/measurements")
+        "measurements": call_country_api(
+            country, f"lots/{lot_id}/measurements", params={"limit": limit, "offset": offset}
+        )
     }
 
 
@@ -162,10 +165,10 @@ def get_all_stocks(country: str = DEFAULT_COUNTRY):
 
 
 @app.get("/measurements")
-def get_all_measurements(country: str = DEFAULT_COUNTRY):
+def get_all_measurements(country: str = DEFAULT_COUNTRY, limit: int = 100, offset: int = 0):
     return {
         "country": country,
-        "measurements": call_country_api(country, "measurements")
+        "measurements": call_country_api(country, "measurements", params={"limit": limit, "offset": offset})
     }
 
 
@@ -180,7 +183,7 @@ def get_alerts(country: str = DEFAULT_COUNTRY):
 @app.get("/dashboard")
 def dashboard(country: str = DEFAULT_COUNTRY):
     lots = call_country_api(country, "lots")
-    measurements = call_country_api(country, "measurements")
+    measurements = call_country_api(country, "measurements", params={"limit": MAX_PAGE_LIMIT})
     alerts = call_country_api(country, "alerts")
 
     return {
@@ -208,7 +211,7 @@ def dashboard_global():
     for country in COUNTRY_BACKENDS:
         try:
             lots = call_country_api(country, "lots")
-            measurements = call_country_api(country, "measurements")
+            measurements = call_country_api(country, "measurements", params={"limit": MAX_PAGE_LIMIT})
             alerts = call_country_api(country, "alerts")
 
             stats = build_statistics(lots, measurements, alerts)

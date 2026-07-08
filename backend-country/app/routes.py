@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -12,6 +12,9 @@ from app.models import Lot, Measurement, Alert
 from app.thresholds import get_country_thresholds, get_own_country, TEMP_TOLERANCE, HUMIDITY_TOLERANCE
 
 router = APIRouter()
+
+DEFAULT_PAGE_LIMIT = 100
+MAX_PAGE_LIMIT = 500
 
 
 def evaluate_lot_status(lot: Lot, measurement: Measurement | None = None) -> str:
@@ -106,22 +109,40 @@ def create_measurement(measurement: MeasurementCreate, db: Session = Depends(get
 
 
 @router.get("/lots/{lot_id}/measurements", response_model=list[MeasurementResponse])
-def get_lot_measurements(lot_id: int, db: Session = Depends(get_db)):
+def get_lot_measurements(
+    lot_id: int,
+    limit: int = Query(DEFAULT_PAGE_LIMIT, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
     lot = db.query(Lot).filter(Lot.id == lot_id).first()
 
     if not lot:
         raise HTTPException(status_code=404, detail="Lot introuvable")
 
-    return db.query(Measurement).filter(
-        Measurement.lot_id == lot_id
-    ).order_by(Measurement.timestamp.asc()).all()
+    return (
+        db.query(Measurement)
+        .filter(Measurement.lot_id == lot_id)
+        .order_by(Measurement.timestamp.asc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
 
 @router.get("/measurements")
-def get_measurements(db: Session = Depends(get_db)):
-    return db.query(Measurement)\
-             .order_by(Measurement.timestamp.desc())\
-             .all()
+def get_measurements(
+    limit: int = Query(DEFAULT_PAGE_LIMIT, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
+    return (
+        db.query(Measurement)
+        .order_by(Measurement.timestamp.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
 @router.get("/alerts", response_model=list[AlertResponse])
 def get_alerts(db: Session = Depends(get_db)):

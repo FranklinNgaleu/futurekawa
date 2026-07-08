@@ -32,7 +32,7 @@ def test_mqtt_measure_creates_expected_measurement_and_alerts():
 
     time.sleep(3)
 
-    measurements_response = requests.get(f"{COUNTRY_API_URL}/measurements")
+    measurements_response = requests.get(f"{COUNTRY_API_URL}/measurements", params={"limit": 500})
     assert measurements_response.status_code == 200
 
     measurements = measurements_response.json()
