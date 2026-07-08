@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
 from app.database import get_db
+from app.email_service import send_grouped_alert_email
 from app.models import Lot, Measurement
+from app.mqtt_subscriber import apply_measurement
 from app.schemas import AlertResponse, LotCreate, LotResponse, MeasurementCreate, MeasurementResponse
 from app.models import Lot, Measurement, Alert
 from app.thresholds import get_country_thresholds, get_own_country, TEMP_TOLERANCE, HUMIDITY_TOLERANCE
@@ -80,22 +82,25 @@ def create_measurement(measurement: MeasurementCreate, db: Session = Depends(get
     if not lot:
         raise HTTPException(status_code=404, detail="Lot introuvable")
 
-    data = measurement.model_dump()
+    timestamp = measurement.timestamp or datetime.utcnow()
 
-    if data["timestamp"] is None:
-        data["timestamp"] = datetime.utcnow()
-
-    data["country"] = lot.country
-    data["warehouse"] = lot.warehouse
-
-    db_measurement = Measurement(**data)
-
-    db.add(db_measurement)
-
-    lot.status = evaluate_lot_status(lot, db_measurement)
+    generated_alerts, measurements, _ = apply_measurement(
+        db,
+        country=lot.country,
+        warehouse=lot.warehouse,
+        temperature=measurement.temperature,
+        humidity=measurement.humidity,
+        timestamp=timestamp,
+        source="iot",
+    )
 
     db.commit()
+
+    db_measurement = next(m for m in measurements if m.lot_id == lot.id)
     db.refresh(db_measurement)
+
+    if generated_alerts:
+        send_grouped_alert_email(generated_alerts)
 
     return db_measurement
 

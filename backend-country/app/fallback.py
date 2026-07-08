@@ -46,7 +46,7 @@ def apply_fallback_measurements():
             if not is_stale(last_timestamp, now, FALLBACK_STALE_AFTER_MINUTES):
                 continue
 
-            generated_alerts, _ = apply_measurement(
+            generated_alerts, _, _ = apply_measurement(
                 db,
                 country=reading.country,
                 warehouse=reading.warehouse,

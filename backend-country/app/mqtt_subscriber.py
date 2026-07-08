@@ -125,9 +125,11 @@ def apply_measurement(db, country, warehouse, temperature, humidity, timestamp, 
         .all()
     )
 
+    measurements = []
+
     if lots:
         for lot in lots:
-            db.add(Measurement(
+            measurement = Measurement(
                 lot_id=lot.id,
                 country=country,
                 warehouse=warehouse,
@@ -136,13 +138,15 @@ def apply_measurement(db, country, warehouse, temperature, humidity, timestamp, 
                 humidity=humidity,
                 status=measurement_status,
                 source=source,
-            ))
+            )
+            db.add(measurement)
+            measurements.append(measurement)
 
             if lot.status != "périmé":
                 lot.status = "en alerte" if generated_alerts else "conforme"
 
     else:
-        db.add(Measurement(
+        measurement = Measurement(
             lot_id=None,
             country=country,
             warehouse=warehouse,
@@ -151,12 +155,14 @@ def apply_measurement(db, country, warehouse, temperature, humidity, timestamp, 
             humidity=humidity,
             status=measurement_status,
             source=source,
-        ))
+        )
+        db.add(measurement)
+        measurements.append(measurement)
 
     for alert_payload in generated_alerts:
         save_alert(db, alert_payload)
 
-    return generated_alerts, len(lots)
+    return generated_alerts, measurements, len(lots)
 
 
 def save_measure(payload: dict):
@@ -165,7 +171,7 @@ def save_measure(payload: dict):
     try:
         parsed_timestamp = parse_timestamp(payload.get("timestamp", datetime.utcnow().isoformat()))
 
-        generated_alerts, lot_count = apply_measurement(
+        generated_alerts, _, lot_count = apply_measurement(
             db,
             country=payload["country"],
             warehouse=payload["warehouse"],

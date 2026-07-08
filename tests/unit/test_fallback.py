@@ -1,24 +1,7 @@
 from datetime import datetime, timedelta
 
-import pytest
-
-from app.database import Base, SessionLocal, engine
 from app.fallback import apply_fallback_measurements, is_stale, jittered
 from app.models import FallbackReading, Lot, Measurement
-
-
-@pytest.fixture
-def db_session():
-    Base.metadata.create_all(bind=engine)
-    session = SessionLocal()
-
-    yield session
-
-    session.rollback()
-    for table in reversed(Base.metadata.sorted_tables):
-        session.execute(table.delete())
-    session.commit()
-    session.close()
 
 
 def test_is_stale_when_no_previous_measurement():
