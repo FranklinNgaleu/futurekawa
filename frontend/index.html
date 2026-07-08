@@ -172,6 +172,48 @@
   .chart-wrap { position: relative; height: 280px; }
 
   .empty-state { color: var(--muted); font-style: italic; padding: 12px 0; }
+
+  .table-scroll { overflow-x: auto; }
+
+  .filter-row { margin-bottom: 16px; }
+  .filter-row label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .filter-row select {
+    margin-top: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    min-width: 220px;
+  }
+
+  tfoot td { font-weight: 600; border-top: 2px solid var(--border); border-bottom: none; }
+
+  @media (max-width: 860px) {
+    .layout { flex-direction: column; }
+
+    .sidebar {
+      width: 100%;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 16px;
+      gap: 8px;
+    }
+
+    .sidebar .logo { width: 100%; margin-bottom: 4px; }
+    .sidebar .country-picker { flex: 1 1 160px; margin: 0; }
+    .sidebar .nav-link { width: auto; flex: 1 1 auto; margin-bottom: 0; }
+
+    .content { padding: 16px; }
+
+    .chart-wrap { height: 220px; }
+
+    form input, form select { max-width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -184,6 +226,7 @@
     </div>
     <button class="nav-link active" data-view="lots">Lots</button>
     <button class="nav-link" data-view="alerts">Alertes</button>
+    <button class="nav-link" data-view="global">Siège</button>
     <button class="nav-link" data-view="new-lot">Nouveau lot</button>
   </nav>
 
@@ -192,18 +235,52 @@
     <section id="view-lots" class="view active">
       <h2>Lots en stock</h2>
       <div class="card">
-        <table id="lots-table">
-          <thead>
-            <tr>
-              <th>Code lot</th>
-              <th>Exploitation</th>
-              <th>Entrepôt</th>
-              <th>Date de stockage</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody id="lots-tbody"></tbody>
-        </table>
+        <div class="filter-row">
+          <label for="farm-filter">Exploitation
+            <select id="farm-filter">
+              <option value="">Toutes les exploitations</option>
+            </select>
+          </label>
+        </div>
+        <div class="table-scroll">
+          <table id="lots-table">
+            <thead>
+              <tr>
+                <th>Code lot</th>
+                <th>Exploitation</th>
+                <th>Entrepôt</th>
+                <th>Date de stockage</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody id="lots-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-global" class="view">
+      <h2>Vue globale (siège)</h2>
+      <div class="card">
+        <div class="table-scroll">
+          <table id="global-table">
+            <thead>
+              <tr>
+                <th>Pays</th>
+                <th>Statut</th>
+                <th>Lots</th>
+                <th>Conformes</th>
+                <th>En alerte</th>
+                <th>Périmés</th>
+                <th>Alertes actives</th>
+              </tr>
+            </thead>
+            <tbody id="global-tbody"></tbody>
+            <tfoot>
+              <tr id="global-totals-row"></tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -228,17 +305,19 @@
     <section id="view-alerts" class="view">
       <h2>Alertes</h2>
       <div class="card">
-        <table id="alerts-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Entrepôt</th>
-              <th>Message</th>
-            </tr>
-          </thead>
-          <tbody id="alerts-tbody"></tbody>
-        </table>
+        <div class="table-scroll">
+          <table id="alerts-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Entrepôt</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -373,6 +452,48 @@ function formatDateTime(value) {
   return d.toLocaleString('fr-FR');
 }
 
+let currentLots = [];
+let farmFilter = '';
+
+function populateFarmFilterOptions(lots) {
+  const select = document.getElementById('farm-filter');
+  const farms = [...new Set(lots.map(lot => lot.farm))].sort();
+  const previousValue = select.value;
+
+  select.innerHTML = '<option value="">Toutes les exploitations</option>' +
+    farms.map(farm => `<option value="${farm}">${farm}</option>`).join('');
+
+  select.value = farms.includes(previousValue) ? previousValue : '';
+  farmFilter = select.value;
+}
+
+function renderLotsTable(lots) {
+  const tbody = document.getElementById('lots-tbody');
+  const filtered = farmFilter ? lots.filter(lot => lot.farm === farmFilter) : lots;
+
+  tbody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Aucun lot enregistré.</td></tr>';
+    return;
+  }
+
+  filtered.forEach(lot => {
+    const tr = document.createElement('tr');
+    tr.className = 'lot-row';
+    tr.dataset.lotId = lot.id;
+    tr.innerHTML = `
+      <td>${lot.lot_code}</td>
+      <td>${lot.farm}</td>
+      <td>${lot.warehouse}</td>
+      <td>${formatDate(lot.storage_date)}</td>
+      <td><span class="status status-${statusClass(lot.status)}">${lot.status}</span></td>
+    `;
+    tr.addEventListener('click', () => openLotDetail(lot.id));
+    tbody.appendChild(tr);
+  });
+}
+
 async function loadLots() {
   const tbody = document.getElementById('lots-tbody');
   tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Chargement...</td></tr>';
@@ -380,33 +501,19 @@ async function loadLots() {
   try {
     const res = await fetch(`${API_BASE}/lots?country=${activeCountry}`);
     const data = await res.json();
-    const lots = data.lots || [];
+    currentLots = data.lots || [];
 
-    tbody.innerHTML = '';
-
-    if (lots.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Aucun lot enregistré.</td></tr>';
-      return;
-    }
-
-    lots.forEach(lot => {
-      const tr = document.createElement('tr');
-      tr.className = 'lot-row';
-      tr.dataset.lotId = lot.id;
-      tr.innerHTML = `
-        <td>${lot.lot_code}</td>
-        <td>${lot.farm}</td>
-        <td>${lot.warehouse}</td>
-        <td>${formatDate(lot.storage_date)}</td>
-        <td><span class="status status-${statusClass(lot.status)}">${lot.status}</span></td>
-      `;
-      tr.addEventListener('click', () => openLotDetail(lot.id));
-      tbody.appendChild(tr);
-    });
+    populateFarmFilterOptions(currentLots);
+    renderLotsTable(currentLots);
   } catch (err) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Impossible de charger les lots.</td></tr>';
   }
 }
+
+document.getElementById('farm-filter').addEventListener('change', (e) => {
+  farmFilter = e.target.value;
+  renderLotsTable(currentLots);
+});
 
 let currentLotId = null;
 
@@ -504,6 +611,61 @@ async function loadAlerts() {
   }
 }
 
+async function loadGlobalDashboard() {
+  const tbody = document.getElementById('global-tbody');
+  const totalsRow = document.getElementById('global-totals-row');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Chargement...</td></tr>';
+  totalsRow.innerHTML = '';
+
+  try {
+    const res = await fetch(`${API_BASE}/dashboard/global`);
+    const data = await res.json();
+    const countries = data.countries || {};
+    const totals = data.statistics || {};
+
+    tbody.innerHTML = '';
+
+    Object.keys(countries).forEach(countryId => {
+      const entry = countries[countryId];
+      const stats = entry.statistics || {};
+      const tr = document.createElement('tr');
+      const label = COUNTRY_LABELS[countryId] || countryId;
+
+      if (entry.status !== 'ok') {
+        tr.innerHTML = `
+          <td>${label}</td>
+          <td><span class="status status-expired">injoignable</span></td>
+          <td colspan="5" class="empty-state">${entry.detail || ''}</td>
+        `;
+      } else {
+        tr.innerHTML = `
+          <td>${label}</td>
+          <td><span class="status status-ok">ok</span></td>
+          <td>${stats.total_lots ?? 0}</td>
+          <td>${stats.healthy_lots ?? 0}</td>
+          <td>${stats.alert_lots ?? 0}</td>
+          <td>${stats.expired_lots ?? 0}</td>
+          <td>${stats.total_alerts ?? 0}</td>
+        `;
+      }
+
+      tbody.appendChild(tr);
+    });
+
+    totalsRow.innerHTML = `
+      <td>Total</td>
+      <td></td>
+      <td>${totals.total_lots ?? 0}</td>
+      <td>${totals.healthy_lots ?? 0}</td>
+      <td>${totals.alert_lots ?? 0}</td>
+      <td>${totals.expired_lots ?? 0}</td>
+      <td>${totals.total_alerts ?? 0}</td>
+    `;
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Impossible de charger la vue globale.</td></tr>';
+  }
+}
+
 function showNewLotMessage(text, type) {
   const el = document.getElementById('new-lot-message');
   el.textContent = text;
@@ -566,6 +728,7 @@ navLinks.forEach(link => {
 
     if (view === 'lots') loadLots();
     if (view === 'alerts') loadAlerts();
+    if (view === 'global') loadGlobalDashboard();
     if (view === 'new-lot') showNewLotMessage('', '');
   });
 });
@@ -594,9 +757,9 @@ document.getElementById('ship-lot-btn').addEventListener('click', async () => {
       return;
     }
 
+    await openLotDetail(currentLotId);
     messageEl.textContent = 'Lot expédié avec succès.';
     messageEl.className = 'message success';
-    openLotDetail(currentLotId);
   } catch (err) {
     messageEl.textContent = 'Erreur réseau : impossible de contacter le serveur.';
     messageEl.className = 'message error';

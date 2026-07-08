@@ -118,6 +118,65 @@ def test_alerts_view_displayed(driver):
     assert driver.find_element(By.ID, "alerts-table").is_displayed()
 
 
+def test_global_dashboard_shows_all_three_countries(driver):
+    driver.get(FRONTEND_URL)
+    nav = wait_present(driver, (By.CSS_SELECTOR, ".nav-link[data-view='global']"))
+    nav.click()
+
+    wait_visible(driver, (By.CSS_SELECTOR, "#view-global.active"))
+    WebDriverWait(driver, 10).until(
+        lambda d: "Équateur" in d.find_element(By.ID, "global-tbody").text
+    )
+
+    table_text = driver.find_element(By.ID, "global-tbody").text
+    assert "Équateur" in table_text
+    assert "Brésil" in table_text
+    assert "Colombie" in table_text
+
+
+def test_farm_filter_filters_lots_table(driver):
+    driver.get(FRONTEND_URL)
+    wait_present(driver, (By.CSS_SELECTOR, "#lots-tbody tr.lot-row"))
+
+    from selenium.webdriver.support.ui import Select
+    farm_select = Select(driver.find_element(By.ID, "farm-filter"))
+    farm_options = [opt.get_attribute("value") for opt in farm_select.options if opt.get_attribute("value")]
+
+    assert len(farm_options) > 0
+
+    chosen_farm = farm_options[0]
+    farm_select.select_by_value(chosen_farm)
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#lots-tbody tr.lot-row")
+    farms_shown = {row.find_elements(By.TAG_NAME, "td")[1].text for row in rows}
+
+    assert farms_shown == {chosen_farm}
+
+
+def test_ship_button_ships_oldest_lot(driver):
+    driver.get(FRONTEND_URL)
+    row = wait_present(driver, (By.CSS_SELECTOR, "#lots-tbody tr.lot-row"))
+    shipped_lot_code = row.find_elements(By.TAG_NAME, "td")[0].text
+    row.click()
+
+    wait_visible(driver, (By.CSS_SELECTOR, "#view-lot-detail.active"))
+    ship_button = driver.find_element(By.ID, "ship-lot-btn")
+    ship_button.click()
+
+    WebDriverWait(driver, 10).until(
+        lambda d: "expédié" in d.find_element(By.ID, "ship-lot-message").text.lower()
+    )
+
+    assert "succès" in driver.find_element(By.ID, "ship-lot-message").text.lower()
+    assert "Expédié le" in driver.find_element(By.ID, "lot-detail-info").text
+    assert ship_button.get_attribute("disabled") is not None
+
+    driver.get(FRONTEND_URL)
+    wait_present(driver, (By.CSS_SELECTOR, "#lots-tbody tr.lot-row"))
+    table_text = driver.find_element(By.ID, "lots-tbody").text
+    assert shipped_lot_code not in table_text
+
+
 def test_create_lot_via_form_appears_in_list(driver):
     driver.get(FRONTEND_URL)
     nav = wait_present(driver, (By.CSS_SELECTOR, ".nav-link[data-view='new-lot']"))
