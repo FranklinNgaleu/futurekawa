@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
+
 
 class LotCreate(BaseModel):
     lot_code: str
@@ -8,6 +9,7 @@ class LotCreate(BaseModel):
     farm: str
     warehouse: str
     storage_date: datetime
+
 
 class LotResponse(LotCreate):
     id: int
@@ -17,11 +19,13 @@ class LotResponse(LotCreate):
     class Config:
         from_attributes = True
 
+
 class MeasurementCreate(BaseModel):
     lot_id: Optional[int] = None
     temperature: float
     humidity: float
     timestamp: Optional[datetime] = None
+
 
 class MeasurementResponse(MeasurementCreate):
     id: int
@@ -29,6 +33,7 @@ class MeasurementResponse(MeasurementCreate):
 
     class Config:
         from_attributes = True
+
 
 class AlertResponse(BaseModel):
     id: int
