@@ -31,9 +31,21 @@ class Measurement(Base):
     humidity = Column(Float, nullable=False)
 
     status = Column(String, default="OK")
+    source = Column(String, nullable=False, default="iot")
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     lot = relationship("Lot", back_populates="measurements")
+
+
+class FallbackReading(Base):
+    __tablename__ = "fallback_readings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    country = Column(String, nullable=False)
+    warehouse = Column(String, nullable=False, unique=True)
+    temperature = Column(Float, nullable=False)
+    humidity = Column(Float, nullable=False)
+
 
 class Alert(Base):
     __tablename__ = "alerts"

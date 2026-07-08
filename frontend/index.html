@@ -47,8 +47,35 @@
 
   .sidebar .logo {
     font-size: 1.3rem;
-    margin: 0 0 24px 4px;
+    margin: 0 0 16px 4px;
     font-weight: 700;
+  }
+
+  .sidebar .country-picker {
+    margin: 0 0 24px 0;
+  }
+
+  .sidebar .country-picker label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: rgba(232, 240, 234, 0.65);
+    margin-bottom: 6px;
+  }
+
+  .sidebar .country-picker select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--sidebar-fg);
+    font-size: 0.9rem;
+  }
+
+  .sidebar .country-picker select option {
+    color: var(--text);
   }
 
   .nav-link {
@@ -151,6 +178,10 @@
 <div class="layout">
   <nav class="sidebar">
     <div class="logo">FutureKawa</div>
+    <div class="country-picker">
+      <label for="country-select">Pays</label>
+      <select id="country-select"></select>
+    </div>
     <button class="nav-link active" data-view="lots">Lots</button>
     <button class="nav-link" data-view="alerts">Alertes</button>
     <button class="nav-link" data-view="new-lot">Nouveau lot</button>
@@ -218,18 +249,13 @@
             <input type="text" name="farm" required>
           </label>
           <label>Entrepôt
-            <select name="warehouse">
-              <option value="WH-EQ-01">WH-EQ-01</option>
-              <option value="WH-EQ-02">WH-EQ-02</option>
-            </select>
+            <select name="warehouse" id="new-lot-warehouse"></select>
           </label>
           <label>Date de stockage
             <input type="date" name="storage_date" required>
           </label>
           <label>Pays
-            <select name="country">
-              <option value="equateur">Équateur</option>
-            </select>
+            <select name="country" id="new-lot-country"></select>
           </label>
           <button class="btn" type="submit">Créer le lot</button>
         </form>
@@ -242,7 +268,14 @@
 
 <script>
 const API_BASE = '/api';
-const DEFAULT_COUNTRY = 'equateur';
+
+const WAREHOUSES_BY_COUNTRY = {
+  equateur: ['WH-EQ-01', 'WH-EQ-02'],
+  bresil: ['WH-BR-01', 'WH-BR-02'],
+  colombie: ['WH-CO-01', 'WH-CO-02'],
+};
+
+let activeCountry = 'equateur';
 
 const views = document.querySelectorAll('.view');
 const navLinks = document.querySelectorAll('.nav-link');
@@ -254,6 +287,71 @@ function showView(name) {
   document.getElementById(`view-${name}`).classList.add('active');
   navLinks.forEach(l => l.classList.toggle('active', l.dataset.view === name));
 }
+
+const COUNTRY_LABELS = {
+  equateur: 'Équateur',
+  bresil: 'Brésil',
+  colombie: 'Colombie',
+};
+
+function populateWarehouseOptions(country) {
+  const select = document.getElementById('new-lot-warehouse');
+  const warehouses = WAREHOUSES_BY_COUNTRY[country] || [];
+  select.innerHTML = warehouses.map(w => `<option value="${w}">${w}</option>`).join('');
+}
+
+async function loadCountries() {
+  const sidebarSelect = document.getElementById('country-select');
+  const formSelect = document.getElementById('new-lot-country');
+
+  let countries;
+  try {
+    const res = await fetch(`${API_BASE}/countries`);
+    const data = await res.json();
+    countries = data.countries || [];
+  } catch (err) {
+    countries = [];
+  }
+
+  if (countries.length === 0) {
+    countries = Object.keys(COUNTRY_LABELS).map(id => ({ id, name: COUNTRY_LABELS[id], enabled: true }));
+  }
+
+  const optionsHtml = countries
+    .map(c => `<option value="${c.id}" ${c.enabled ? '' : 'disabled'}>${c.name}${c.enabled ? '' : ' (indisponible)'}</option>`)
+    .join('');
+
+  sidebarSelect.innerHTML = optionsHtml;
+  formSelect.innerHTML = optionsHtml;
+
+  const preferredDefault = countries.find(c => c.id === 'equateur' && c.enabled);
+  const firstEnabled = countries.find(c => c.enabled) || countries[0];
+  activeCountry = (preferredDefault || firstEnabled).id;
+
+  sidebarSelect.value = activeCountry;
+  formSelect.value = activeCountry;
+  populateWarehouseOptions(formSelect.value);
+
+  loadLots();
+}
+
+document.getElementById('country-select').addEventListener('change', (e) => {
+  activeCountry = e.target.value;
+  const currentView = document.querySelector('.view.active').id.replace('view-', '');
+
+  if (currentView === 'lot-detail') {
+    showView('lots');
+    loadLots();
+  } else if (currentView === 'alerts') {
+    loadAlerts();
+  } else if (currentView === 'lots') {
+    loadLots();
+  }
+});
+
+document.getElementById('new-lot-country').addEventListener('change', (e) => {
+  populateWarehouseOptions(e.target.value);
+});
 
 function statusClass(status) {
   if (status === 'conforme') return 'ok';
@@ -276,7 +374,7 @@ async function loadLots() {
   tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Chargement...</td></tr>';
 
   try {
-    const res = await fetch(`${API_BASE}/lots?country=${DEFAULT_COUNTRY}`);
+    const res = await fetch(`${API_BASE}/lots?country=${activeCountry}`);
     const data = await res.json();
     const lots = data.lots || [];
 
@@ -308,8 +406,8 @@ async function loadLots() {
 
 async function openLotDetail(lotId) {
   const [lotRes, measRes] = await Promise.all([
-    fetch(`${API_BASE}/lots/${lotId}?country=${DEFAULT_COUNTRY}`),
-    fetch(`${API_BASE}/lots/${lotId}/measurements?country=${DEFAULT_COUNTRY}`)
+    fetch(`${API_BASE}/lots/${lotId}?country=${activeCountry}`),
+    fetch(`${API_BASE}/lots/${lotId}/measurements?country=${activeCountry}`)
   ]);
 
   const lotData = await lotRes.json();
@@ -358,7 +456,7 @@ async function loadAlerts() {
   tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Chargement...</td></tr>';
 
   try {
-    const res = await fetch(`${API_BASE}/alerts?country=${DEFAULT_COUNTRY}`);
+    const res = await fetch(`${API_BASE}/alerts?country=${activeCountry}`);
     const data = await res.json();
     const alerts = data.alerts || [];
 
@@ -455,7 +553,7 @@ document.getElementById('back-to-lots').addEventListener('click', () => {
   loadLots();
 });
 
-loadLots();
+loadCountries();
 </script>
 </body>
 </html>

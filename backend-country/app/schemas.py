@@ -24,6 +24,7 @@ class MeasurementCreate(BaseModel):
 
 class MeasurementResponse(MeasurementCreate):
     id: int
+    source: str
 
     class Config:
         from_attributes = True

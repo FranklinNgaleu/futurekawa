@@ -6,16 +6,22 @@ from app.database import engine
 from app.models import Base
 from app.routes import router
 from app.mqtt_subscriber import start_mqtt_subscriber
-from app.seed import seed_database
+from app.seed import seed_database, seed_fallback_readings
 from app.scheduler import check_expired_lots
+from app.fallback import apply_fallback_measurements
 
 EXPIRED_LOTS_CHECK_INTERVAL_MINUTES = int(
     os.getenv("EXPIRED_LOTS_CHECK_INTERVAL_MINUTES", "60")
 )
+FALLBACK_CHECK_INTERVAL_MINUTES = int(
+    os.getenv("FALLBACK_CHECK_INTERVAL_MINUTES", "5")
+)
 
 Base.metadata.create_all(bind=engine)
 seed_database()
+seed_fallback_readings()
 check_expired_lots()
+apply_fallback_measurements()
 
 app = FastAPI(
     title="FutureKawa Backend Country",
@@ -37,6 +43,12 @@ def startup_event():
         "interval",
         minutes=EXPIRED_LOTS_CHECK_INTERVAL_MINUTES,
         id="check_expired_lots",
+    )
+    scheduler.add_job(
+        apply_fallback_measurements,
+        "interval",
+        minutes=FALLBACK_CHECK_INTERVAL_MINUTES,
+        id="apply_fallback_measurements",
     )
     scheduler.start()
 

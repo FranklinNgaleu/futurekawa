@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-multi-db.sql:/docker-entrypoint-initdb.d/init-multi-db.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U futurekawa -d futurekawa"]
       interval: 5s
@@ -27,14 +28,15 @@ services:
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
 
-  backend-country:
+  backend-country-equateur:
     build: ./backend-country
     image: futurekawa/backend-country:latest
-    container_name: backend-country
+    container_name: backend-country-equateur
     ports:
       - "8001:8000"
     environment:
-      DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa
+      COUNTRY: equateur
+      DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa_equateur
       MQTT_HOST: mosquitto
       MQTT_PORT: 1883
       MQTT_TOPIC_MEASURES: futurekawa/equateur/measures
@@ -44,6 +46,74 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
       EXPIRED_LOTS_CHECK_INTERVAL_MINUTES: ${EXPIRED_LOTS_CHECK_INTERVAL_MINUTES:-60}
+      FALLBACK_CHECK_INTERVAL_MINUTES: ${FALLBACK_CHECK_INTERVAL_MINUTES:-5}
+      FALLBACK_STALE_AFTER_MINUTES: ${FALLBACK_STALE_AFTER_MINUTES:-15}
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend-country-bresil:
+    build: ./backend-country
+    image: futurekawa/backend-country:latest
+    container_name: backend-country-bresil
+    ports:
+      - "8002:8000"
+    environment:
+      COUNTRY: bresil
+      DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa_bresil
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+      MQTT_TOPIC_MEASURES: futurekawa/bresil/measures
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
+      EXPIRED_LOTS_CHECK_INTERVAL_MINUTES: ${EXPIRED_LOTS_CHECK_INTERVAL_MINUTES:-60}
+      FALLBACK_CHECK_INTERVAL_MINUTES: ${FALLBACK_CHECK_INTERVAL_MINUTES:-5}
+      FALLBACK_STALE_AFTER_MINUTES: ${FALLBACK_STALE_AFTER_MINUTES:-15}
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend-country-colombie:
+    build: ./backend-country
+    image: futurekawa/backend-country:latest
+    container_name: backend-country-colombie
+    ports:
+      - "8003:8000"
+    environment:
+      COUNTRY: colombie
+      DATABASE_URL: postgresql://futurekawa:futurekawa@postgres:5432/futurekawa_colombie
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+      MQTT_TOPIC_MEASURES: futurekawa/colombie/measures
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
+      EXPIRED_LOTS_CHECK_INTERVAL_MINUTES: ${EXPIRED_LOTS_CHECK_INTERVAL_MINUTES:-60}
+      FALLBACK_CHECK_INTERVAL_MINUTES: ${FALLBACK_CHECK_INTERVAL_MINUTES:-5}
+      FALLBACK_STALE_AFTER_MINUTES: ${FALLBACK_STALE_AFTER_MINUTES:-15}
       PYTHONUNBUFFERED: 1
     depends_on:
       postgres:
@@ -64,10 +134,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      COUNTRY_BACKEND_URL: http://backend-country:8000
-      COUNTRY_BACKENDS: ${COUNTRY_BACKENDS:-}
+      COUNTRY_BACKEND_URL: http://backend-country-equateur:8000
+      COUNTRY_BACKENDS: ${COUNTRY_BACKENDS:-{"equateur":"http://backend-country-equateur:8000","bresil":"http://backend-country-bresil:8000","colombie":"http://backend-country-colombie:8000"}}
     depends_on:
-      backend-country:
+      backend-country-equateur:
+        condition: service_healthy
+      backend-country-bresil:
+        condition: service_healthy
+      backend-country-colombie:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

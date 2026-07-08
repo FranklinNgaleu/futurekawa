@@ -54,6 +54,32 @@ def test_homepage_loads_with_title(driver):
     assert "FutureKawa" in driver.find_element(By.CSS_SELECTOR, ".sidebar .logo").text
 
 
+def test_country_selector_has_three_countries(driver):
+    driver.get(FRONTEND_URL)
+    wait_present(driver, (By.CSS_SELECTOR, "#country-select option"))
+
+    options = driver.find_elements(By.CSS_SELECTOR, "#country-select option")
+    values = {opt.get_attribute("value") for opt in options}
+
+    assert values == {"equateur", "bresil", "colombie"}
+
+
+def test_switching_country_reloads_lots_for_that_country(driver):
+    driver.get(FRONTEND_URL)
+    wait_present(driver, (By.CSS_SELECTOR, "#lots-tbody tr.lot-row"))
+
+    from selenium.webdriver.support.ui import Select
+    Select(driver.find_element(By.ID, "country-select")).select_by_value("bresil")
+
+    WebDriverWait(driver, 10).until(
+        lambda d: "LOT-BR-" in d.find_element(By.ID, "lots-tbody").text
+    )
+
+    table_text = driver.find_element(By.ID, "lots-tbody").text
+    assert "LOT-BR-" in table_text
+    assert "LOT-EQ-" not in table_text
+
+
 def test_lots_view_has_at_least_six_rows(driver):
     driver.get(FRONTEND_URL)
     wait_present(driver, (By.CSS_SELECTOR, "#lots-tbody tr.lot-row"))

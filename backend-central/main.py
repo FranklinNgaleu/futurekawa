@@ -24,8 +24,14 @@ def load_country_backends():
         except (json.JSONDecodeError, TypeError):
             pass
 
-    fallback_url = os.getenv("COUNTRY_BACKEND_URL", "http://backend-country:8000")
-    return {DEFAULT_COUNTRY: fallback_url}
+    if os.getenv("COUNTRY_BACKEND_URL"):
+        return {DEFAULT_COUNTRY: os.getenv("COUNTRY_BACKEND_URL")}
+
+    return {
+        "equateur": "http://backend-country-equateur:8000",
+        "bresil": "http://backend-country-bresil:8000",
+        "colombie": "http://backend-country-colombie:8000",
+    }
 
 
 COUNTRY_BACKENDS = load_country_backends()

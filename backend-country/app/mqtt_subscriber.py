@@ -103,63 +103,84 @@ def save_alert(db, alert_payload: dict):
     print(f"Alerte générée par le backend : {alert_payload['message']}", flush=True)
 
 
+def apply_measurement(db, country, warehouse, temperature, humidity, timestamp, source="iot"):
+    payload = {
+        "country": country,
+        "warehouse": warehouse,
+        "timestamp": timestamp.isoformat(),
+        "temperature": temperature,
+        "humidity": humidity,
+    }
+
+    generated_alerts = generate_alerts_from_measure(payload)
+    measurement_status = "ALERT" if generated_alerts else "OK"
+
+    lots = (
+        db.query(Lot)
+        .filter(
+            Lot.country == country,
+            Lot.warehouse == warehouse,
+        )
+        .order_by(Lot.storage_date.asc())
+        .all()
+    )
+
+    if lots:
+        for lot in lots:
+            db.add(Measurement(
+                lot_id=lot.id,
+                country=country,
+                warehouse=warehouse,
+                timestamp=timestamp,
+                temperature=temperature,
+                humidity=humidity,
+                status=measurement_status,
+                source=source,
+            ))
+
+            if lot.status != "périmé":
+                lot.status = "en alerte" if generated_alerts else "conforme"
+
+    else:
+        db.add(Measurement(
+            lot_id=None,
+            country=country,
+            warehouse=warehouse,
+            timestamp=timestamp,
+            temperature=temperature,
+            humidity=humidity,
+            status=measurement_status,
+            source=source,
+        ))
+
+    for alert_payload in generated_alerts:
+        save_alert(db, alert_payload)
+
+    return generated_alerts, len(lots)
+
+
 def save_measure(payload: dict):
     db = SessionLocal()
 
     try:
-        generated_alerts = generate_alerts_from_measure(payload)
-
-        lots = (
-            db.query(Lot)
-            .filter(
-                Lot.country == payload["country"],
-                Lot.warehouse == payload["warehouse"],
-                
-            )
-            .order_by(Lot.storage_date.asc())
-            .all()
-        )
-
-        measurement_status = "ALERT" if generated_alerts else "OK"
         parsed_timestamp = parse_timestamp(payload.get("timestamp", datetime.utcnow().isoformat()))
 
-        if lots:
-            for lot in lots:
-                measurement = Measurement(
-                    lot_id=lot.id,
-                    country=payload["country"],
-                    warehouse=payload["warehouse"],
-                    timestamp=parsed_timestamp,
-                    temperature=payload["temperature"],
-                    humidity=payload["humidity"],
-                    status=measurement_status
-                )
-
-                db.add(measurement)
-                lot.status = "en alerte" if generated_alerts else "conforme"
-
-        else:
-            measurement = Measurement(
-                lot_id=None,
-                country=payload["country"],
-                warehouse=payload["warehouse"],
-                timestamp=parsed_timestamp,
-                temperature=payload["temperature"],
-                humidity=payload["humidity"],
-                status=measurement_status
-            )
-
-            db.add(measurement)
-
-        for alert_payload in generated_alerts:
-            save_alert(db, alert_payload)
+        generated_alerts, lot_count = apply_measurement(
+            db,
+            country=payload["country"],
+            warehouse=payload["warehouse"],
+            temperature=payload["temperature"],
+            humidity=payload["humidity"],
+            timestamp=parsed_timestamp,
+            source="iot",
+        )
 
         db.commit()
 
         print(
-            f"Mesure enregistrée pour {len(lots)} lot(s) "
+            f"Mesure enregistrée pour {lot_count} lot(s) "
             f"- {payload['temperature']}°C / {payload['humidity']}% "
-            f"- statut {measurement_status}",
+            f"- statut {'ALERT' if generated_alerts else 'OK'}",
             flush=True
         )
 
